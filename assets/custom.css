@@ -1,6 +1,3 @@
-/* Load modern fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..900&family=JetBrains+Mono:wght@400;600&display=swap');
-
 /* Font family overrides */
 :root {
   --font-sans: "Inter", ui-sans-serif, -apple-system, system-ui, "Segoe UI", Roboto,
