@@ -1,0 +1,10 @@
+{{/* Usage: {{< plot src="/images/chart.png" alt="Caption" caption="My chart" wide="true" >}} */}}
+{{- $src := .Get "src" -}}
+{{- $alt := .Get "alt" | default "" -}}
+{{- $caption := .Get "caption" -}}
+{{- $wide := .Get "wide" -}}
+<figure class="plot {{ if $wide }}plot-wide{{ end }}">
+  <img src="{{ $src | absURL }}" alt="{{ $alt }}" loading="lazy" decoding="async" />
+  {{- with $caption -}}<figcaption>{{ . }}</figcaption>{{- end -}}
+</figure>
+

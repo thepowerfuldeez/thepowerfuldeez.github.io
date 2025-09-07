@@ -1,0 +1,4 @@
+{{/* Usage: {{< sidenote id="1" >}}Your side comment{{< /sidenote >}} */}}
+<span class="sidenote-ref">[{{ .Get "id" }}]</span>
+<span class="sidenote" data-id="{{ .Get "id" }}">{{ .Inner | markdownify }}</span>
+

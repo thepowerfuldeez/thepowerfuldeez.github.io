@@ -1,7 +1,7 @@
 /* Load modern fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..900&family=JetBrains+Mono:wght@400;600&display=swap');
 
-/* Override theme font variables */
+/* Font family overrides */
 :root {
   --font-sans: "Inter", ui-sans-serif, -apple-system, system-ui, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
@@ -10,6 +10,37 @@
     "Liberation Mono", "Courier New", monospace;
 }
 
-/* Publications spacing tweaks */
-.pub-list .row { gap: 1.5rem; }
+/* Base typography tuning */
+html { font-size: 18px; }
+body { line-height: 1.65; }
+.prose { font-size: 1.06rem; }
+.prose h1 { font-size: 2rem; line-height: 1.25; font-weight: 700; margin-bottom: 0.6rem; }
+.prose h2 { font-size: 1.5rem; line-height: 1.35; font-weight: 600; margin-top: 2rem; margin-bottom: 0.4rem; }
+.prose h3 { font-size: 1.25rem; line-height: 1.4; font-weight: 600; margin-top: 1.4rem; margin-bottom: 0.25rem; }
+.prose p { margin: 0.7rem 0; }
+.prose a { text-decoration: underline; text-underline-offset: 3px; }
 
+/* Code blocks */
+.prose pre, .prose code { font-family: var(--font-mono); }
+.prose pre { background: color-mix(in oklab, currentColor 8%, transparent); padding: 0.9rem 1rem; border-radius: 8px; overflow: auto; }
+.prose code { background: color-mix(in oklab, currentColor 6%, transparent); padding: 0.1rem 0.35rem; border-radius: 4px; }
+
+/* Sidenotes (inline [n] markers with right-side comments on wide screens) */
+.prose .sidenote-ref { font-size: 0.8em; vertical-align: super; margin-left: 2px; opacity: 0.7; }
+.prose .sidenote { float: right; clear: right; width: 240px; margin: 0.2rem 0 0.6rem 1rem; font-size: 0.9rem; line-height: 1.45; opacity: 0.9; }
+@media (max-width: 1024px) {
+  .prose .sidenote { float: none; width: auto; margin: 0.4rem 0; display: block; border-left: 2px solid color-mix(in oklab, currentColor 15%, transparent); padding-left: 0.75rem; }
+}
+
+/* Plot / figures */
+.plot { margin: 1.5rem 0; }
+.plot img { width: 100%; height: auto; border-radius: 10px; box-shadow: 0 2px 24px color-mix(in oklab, currentColor 10%, transparent); }
+.plot figcaption { text-align: center; font-size: 0.9rem; opacity: 0.75; margin-top: 0.5rem; }
+.plot-wide { width: 100vw; margin-left: calc(50% - 50vw); }
+.plot-wide img { max-width: min(1200px, 92vw); margin: 0 auto; display: block; }
+
+/* Publications layout tweaks */
+.pub-rows .row { gap: 1.5rem; }
+.pub-rows .date { width: 10rem; text-align: left; opacity: 0.65; font-size: 0.82rem; }
+.pub-rows .title a { font-weight: 500; }
+.pub-rows .sep { opacity: 0.25; }

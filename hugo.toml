@@ -34,6 +34,8 @@ theme = 'paper'
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
+    [markup.goldmark.extensions]
+      footnote = true
 
 [caches]
   [caches.images]
