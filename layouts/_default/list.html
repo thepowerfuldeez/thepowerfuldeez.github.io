@@ -45,15 +45,16 @@ $paginator.Pages -}}<!---->
   {{- end -}}
 </div>
 
-<!-- Render homepage content from content/_index.md -->
-{{- if $.Content -}}
-<section class="mb-10">
-  {{- $.Content -}}
-  <hr class="mt-10 opacity-20" />
-  <h3 class="mt-10 mb-6 opacity-80">Latest Posts</h3>
-  <!-- After this header, the loop continues to list posts below -->
-</section>
-{{- end -}}
+  {{- end -}}<!----> <!-- end: if or $avatar_url site.Params.name -->
+
+  <!-- Render homepage content from content/_index.md once, above posts -->
+  {{- if $.Content -}}
+  <section class="mb-10">
+    {{- $.Content -}}
+    <hr class="mt-10 opacity-20" />
+    <h3 class="mt-10 mb-6 opacity-80">Latest Posts</h3>
+  </section>
+  {{- end -}}
 
 {{- end -}}<!---->
 
@@ -90,4 +91,3 @@ $paginator.Pages -}}<!---->
 {{- end -}}<!---->
 
 {{- end -}}
-

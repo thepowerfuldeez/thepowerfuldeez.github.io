@@ -6,7 +6,7 @@ theme = 'paper'
 [params]
   # Used by the Paper theme for the header
   name = 'George Grigorev'
-  bio = 'Exploring LLM pre-training and sample efficiency, small coding LLMs, and finance LLM agents.'
+  bio = 'Previously at Together AI (distributed training + evals) and Snap (multimodal LLMs used by 100M+ people). I work across text, image, and speech; now focused on training efficiency, sample efficiency, and small coding LLMs.'
   mainSections = ['posts']
   color = 'linen'
 

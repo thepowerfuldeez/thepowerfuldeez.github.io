@@ -1,0 +1,23 @@
+{{- define "main" -}}
+
+<h1 class="mb-6">{{ .Title }}</h1>
+
+<div class="divide-y divide-black/10 dark:divide-white/10">
+  {{- $entries := .Params.entries | default (slice) -}}
+  {{- range sort $entries "date" "desc" -}}
+  <div class="flex items-baseline gap-3 py-3">
+    <div class="w-28 shrink-0 text-xs opacity-60">{{ .date }}</div>
+    <div class="flex-1 text-center">
+      <a href="{{ .url }}" class="hover:opacity-80" target="_blank" rel="noopener">{{ .title }}</a>
+    </div>
+    {{- if .type -}}
+    <div class="w-20 shrink-0 text-right text-xs opacity-60">{{ .type }}</div>
+    {{- else -}}
+    <div class="w-20 shrink-0"></div>
+    {{- end -}}
+  </div>
+  {{- end -}}
+</div>
+
+{{- end -}}
+
