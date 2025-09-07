@@ -1,0 +1,8 @@
+baseURL = 'https://ggrigorev.me/'
+languageCode = 'en-us'
+title = 'George Grigorev Blog'
+theme = 'paper'
+
+[caches]
+  [caches.images]
+    dir = ':cacheDir/images'
