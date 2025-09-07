@@ -3,6 +3,35 @@ languageCode = 'en-us'
 title = 'George Grigorev Blog'
 theme = 'paper'
 
+[params]
+  # Used by the Paper theme for the header
+  name = 'George Grigorev'
+  bio = 'Exploring LLM pre-training and sample efficiency, small coding LLMs, and finance LLM agents.'
+  mainSections = ['posts']
+  color = 'linen'
+
+[menu]
+  [[menu.main]]
+    identifier = 'about'
+    name = 'About'
+    url = '/'
+    weight = 10
+  [[menu.main]]
+    identifier = 'publications'
+    name = 'Publications'
+    url = '/publications/'
+    weight = 20
+  [[menu.main]]
+    identifier = 'blog'
+    name = 'Blog'
+    url = '/posts/'
+    weight = 30
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
 [caches]
   [caches.images]
     dir = ':cacheDir/images'
