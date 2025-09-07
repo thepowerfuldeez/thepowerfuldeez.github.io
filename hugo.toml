@@ -9,6 +9,9 @@ theme = 'paper'
   bio = "Previously I worked at Together AI running distributed training on hundreds of GPUs and building evals. At Snap I developed multimodal LLMs that used 100M+ people worldwide, as well as doing diffusion model pre-training and building AI applications end-to-end and contributing to research. I have vast experience in both text, image, speech domains."
   mainSections = ['posts']
   color = 'linen'
+  linkedin = 'george-grigorev'
+  twitter  = 'iamgrigorev'
+  github   = 'thepowerfuldeez'
 
 [menu]
   [[menu.main]]
