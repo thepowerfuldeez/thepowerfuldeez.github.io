@@ -2,22 +2,43 @@
 
 <h1 class="mb-6">{{ .Title }}</h1>
 
+{{- $entries := .Params.entries | default (slice) -}}
+{{- $blogs := where $entries "type" "Blog" -}}
+{{- $patents := where $entries "type" "Patent" -}}
+
+<!-- Blogs -->
+{{- if gt (len $blogs) 0 -}}
+<h2 class="mt-8 mb-2 text-lg opacity-80">Blog Posts</h2>
 <div class="divide-y divide-black/10 dark:divide-white/10">
-  {{- $entries := .Params.entries | default (slice) -}}
-  {{- range sort $entries "date" "desc" -}}
-  <div class="flex items-baseline gap-3 py-3">
-    <div class="w-28 shrink-0 text-xs opacity-60">{{ .date }}</div>
+  {{- range sort $blogs "date" "desc" -}}
+  <div class="flex items-baseline gap-6 py-3">
+    <div class="w-36 shrink-0 text-xs opacity-60">{{ .date }}</div>
     <div class="flex-1 text-center">
-      <a href="{{ .url }}" class="hover:opacity-80" target="_blank" rel="noopener">{{ .title }}</a>
+      <a href="{{ .url }}" class="font-medium hover:opacity-80" target="_blank" rel="noopener">{{ .title }}</a>
     </div>
-    {{- if .type -}}
-    <div class="w-20 shrink-0 text-right text-xs opacity-60">{{ .type }}</div>
-    {{- else -}}
-    <div class="w-20 shrink-0"></div>
-    {{- end -}}
   </div>
   {{- end -}}
 </div>
-
 {{- end -}}
 
+<!-- Divider between sections -->
+{{- if and (gt (len $blogs) 0) (gt (len $patents) 0) -}}
+<div class="my-8 border-t border-black/10 dark:border-white/10"></div>
+{{- end -}}
+
+<!-- Patents -->
+{{- if gt (len $patents) 0 -}}
+<h2 class="mt-8 mb-2 text-lg opacity-80">Patents</h2>
+<div class="divide-y divide-black/10 dark:divide-white/10">
+  {{- range sort $patents "date" "desc" -}}
+  <div class="flex items-baseline gap-6 py-3">
+    <div class="w-36 shrink-0 text-xs opacity-60">{{ .date }}</div>
+    <div class="flex-1 text-center">
+      <a href="{{ .url }}" class="font-medium hover:opacity-80" target="_blank" rel="noopener">{{ .title }}</a>
+    </div>
+  </div>
+  {{- end -}}
+</div>
+{{- end -}}
+
+{{- end -}}

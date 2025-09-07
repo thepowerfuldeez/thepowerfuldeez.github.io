@@ -1,0 +1,15 @@
+/* Load modern fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+/* Override theme font variables */
+:root {
+  --font-sans: "Inter", ui-sans-serif, -apple-system, system-ui, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+/* Publications spacing tweaks */
+.pub-list .row { gap: 1.5rem; }
+
