@@ -3,44 +3,31 @@
 <h1 class="mb-6">{{ .Title }}</h1>
 
 {{- $entries := .Params.entries | default (slice) -}}
-{{- $blogs := where $entries "type" "Blog" -}}
-{{- $patents := where $entries "type" "Patent" -}}
+{{- $sorted := sort $entries "date" "desc" -}}
 
-<!-- Blogs -->
-{{- if gt (len $blogs) 0 -}}
-<h2 class="mt-8 mb-2 text-lg opacity-80">Blog Posts</h2>
-<div class="pub-rows divide-y divide-black/10 dark:divide-white/10">
-  {{- range sort $blogs "date" "desc" -}}
-  <div class="row flex items-baseline gap-6 py-3">
-    <div class="date shrink-0 text-xs">{{ .date }}</div>
-    <div class="sep">·</div>
-    <div class="title flex-1 text-center">
-      <a href="{{ .url }}" class="hover:opacity-80" target="_blank" rel="noopener">{{ .title }}</a>
-    </div>
-  </div>
-  {{- end -}}
-</div>
-{{- end -}}
-
-<!-- Divider between sections -->
-{{- if and (gt (len $blogs) 0) (gt (len $patents) 0) -}}
-<div class="my-8 border-t border-black/10 dark:border-white/10"></div>
-{{- end -}}
-
-<!-- Patents -->
-{{- if gt (len $patents) 0 -}}
-<h2 class="mt-8 mb-2 text-lg opacity-80">Patents</h2>
-<div class="pub-rows divide-y divide-black/10 dark:divide-white/10">
-  {{- range sort $patents "date" "desc" -}}
-  <div class="row flex items-baseline gap-6 py-3">
-    <div class="date shrink-0 text-xs">{{ .date }}</div>
-    <div class="sep">·</div>
-    <div class="title flex-1 text-center">
-      <a href="{{ .url }}" class="hover:opacity-80" target="_blank" rel="noopener">{{ .title }}</a>
-    </div>
-  </div>
-  {{- end -}}
-</div>
+{{- if gt (len $sorted) 0 -}}
+  <section class="pub-list">
+    {{- range $sorted -}}
+    <article class="pub-item">
+      <h3 class="pub-title">
+        <a href="{{ .url }}" target="_blank" rel="noopener">{{ .title }}</a>
+      </h3>
+      <div class="pub-meta">
+        {{- with .type -}}
+          <span class="pub-type">{{ . }}</span>
+        {{- end -}}
+        {{- with (time .date) -}}
+          <time datetime="{{ .Format "2006-01-02" }}" class="pub-date">{{ .Format "Jan 2006" }}</time>
+        {{- end -}}
+      </div>
+      {{- with .summary -}}
+      <p class="pub-summary">{{ . }}</p>
+      {{- end -}}
+    </article>
+    {{- end -}}
+  </section>
+{{- else -}}
+  <p class="opacity-60">No publications yet. Check back soon.</p>
 {{- end -}}
 
 {{- end -}}

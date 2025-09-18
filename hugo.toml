@@ -12,6 +12,8 @@ theme = 'paper'
   linkedin = 'george-grigorev'
   twitter  = 'iamgrigorev'
   github   = 'thepowerfuldeez'
+  math = true
+  mathEngine = 'mathjax'
 
 [menu]
   [[menu.main]]

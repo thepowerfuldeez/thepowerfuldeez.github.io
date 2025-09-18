@@ -1,0 +1,124 @@
+{{- /* Determine if math should be rendered on this page */ -}}
+{{- $siteMath := site.Params.math -}}
+{{- $pageMath := .Params.math -}}
+
+{{- $siteEnabled := false -}}
+{{- $siteMathType := printf "%T" $siteMath -}}
+{{- if eq $siteMathType "bool" -}}
+  {{- $siteEnabled = $siteMath -}}
+{{- else if (reflect.IsMap $siteMath) -}}
+  {{- if (isset $siteMath "enable") -}}
+    {{- $siteEnabled = index $siteMath "enable" -}}
+  {{- else -}}
+    {{- $siteEnabled = true -}}
+  {{- end -}}
+{{- else if $siteMath -}}
+  {{- $siteEnabled = true -}}
+{{- end -}}
+
+{{- $pageOverride := false -}}
+{{- $pageEnabled := false -}}
+{{- $pageMathType := printf "%T" $pageMath -}}
+{{- if eq $pageMathType "bool" -}}
+  {{- $pageOverride = true -}}
+  {{- $pageEnabled = $pageMath -}}
+{{- else if (reflect.IsMap $pageMath) -}}
+  {{- $pageOverride = true -}}
+  {{- if (isset $pageMath "enable") -}}
+    {{- $pageEnabled = index $pageMath "enable" -}}
+  {{- else -}}
+    {{- $pageEnabled = true -}}
+  {{- end -}}
+{{- else if $pageMath -}}
+  {{- $pageOverride = true -}}
+  {{- $pageEnabled = true -}}
+{{- end -}}
+
+{{- $enabled := cond $pageOverride $pageEnabled $siteEnabled -}}
+{{- if $enabled -}}
+  {{- /* Resolve engine preference with page taking precedence */ -}}
+  {{- $engine := "katex" -}}
+  {{- with site.Params.mathEngine -}}
+    {{- $engine = . | lower -}}
+  {{- end -}}
+  {{- if (reflect.IsMap $siteMath) -}}
+    {{- with (index $siteMath "engine") -}}
+      {{- $engine = . | lower -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if (reflect.IsMap $pageMath) -}}
+    {{- with (index $pageMath "engine") -}}
+      {{- $engine = . | lower -}}
+    {{- end -}}
+  {{- else if eq $pageMathType "string" -}}
+    {{- $engine = $pageMath | lower -}}
+  {{- end -}}
+  {{- with .Params.mathEngine -}}
+    {{- $engine = . | lower -}}
+  {{- end -}}
+
+  {{- if ne $engine "mathjax" -}}
+  {{- /* Default to KaTeX (previous behaviour) */ -}}
+  {{- if site.Params.localKatex -}}
+    <link rel="stylesheet" href="{{- "katex.min.css" | relURL -}}" />
+    <script defer src="{{- "katex.min.js" | relURL -}}"></script>
+    <script defer src="{{- "auto-render.min.js" | relURL -}}"></script>
+  {{- else -}}
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css"
+      integrity="sha384-3UiQGuEI4TTMaFmGIZumfRPtfKQ3trwQE2JgosJxCnGmQpL/lJdjpcHkaaFwHlcI"
+      crossorigin="anonymous"
+    />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.js"
+      integrity="sha384-G0zcxDFp5LWZtDuRMnBkk3EphCK1lhEf4UEyEM693ka574TZGwo4IWwS6QLzM/2t"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/contrib/auto-render.min.js"
+      integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05"
+      crossorigin="anonymous"
+    ></script>
+  {{- end -}}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () =>
+      renderMathInElement(document.body, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false },
+          { left: '\\[', right: '\\]', display: true },
+          { left: '\\(', right: '\\)', display: false },
+        ],
+        throwOnError: false,
+      }),
+    );
+  </script>
+{{- else -}}
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [ ['$', '$'], ['\\(', '\\)'] ],
+        displayMath: [ ['$$', '$$'], ['\\[', '\\]'] ],
+        processEscapes: true,
+        tags: 'ams',
+        packages: { '[+]': ['noerrors'] },
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+      },
+      loader: { load: ['[tex]/noerrors'] },
+    };
+  </script>
+  <script
+    defer
+    id="mathjax-script"
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    integrity="sha384-BgcnpShUMHbOWcZH/AsWT1cR0J50NkBfMxptW9L8aLqrh+IJ7q7OPVXni4eWh05q"
+    crossorigin="anonymous"
+  ></script>
+  {{- end -}}
+{{- end -}}
