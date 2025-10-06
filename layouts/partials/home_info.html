@@ -1,0 +1,43 @@
+{{- with site.Params.homeInfoParams }}
+<article class="first-entry home-info">
+  <header class="entry-header">
+    {{- with site.Params.socialIcons }}
+    <div class="home-socials">
+      {{- range . }}
+      {{- $url := trim .url " " | safeURL -}}
+      {{- $name := trim .name " " | lower -}}
+      {{- $title := .title | default .name -}}
+      <a
+        href="{{ $url }}"
+        target="_blank"
+        rel="noopener noreferrer me"
+        title="{{ if eq $name "twitter" }}X{{ else }}{{ $title | title }}{{ end }}"
+        aria-label="{{ if eq $name "twitter" }}X{{ else }}{{ $title | title }}{{ end }}"
+        class="social-{{ $name }}"
+      >
+        {{- if eq $name "twitter" -}}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          role="img"
+          aria-hidden="true"
+        >
+          <path
+            d="M19.633 0h-3.662L12 7.396 8.029 0H0l8.531 12.74L0 24h3.732l5.791-8.667L15.949 24H24l-8.928-13.145L24 0z"
+          />
+        </svg>
+        {{- else -}}
+        {{- partial "svg.html" . -}}
+        {{- end -}}
+      </a>
+      {{- end -}}
+    </div>
+    {{- end }}
+    <h1>{{ .Title | markdownify }}</h1>
+  </header>
+  <div class="entry-content">
+    {{ .Content | markdownify }}
+  </div>
+</article>
+{{- end -}}

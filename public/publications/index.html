@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head>
-	<meta name="generator" content="Hugo 0.149.1"><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
-<title>George Grigorev Blog</title>
-
-<meta name="description" content="Previously at Together AI running distributed training on hundreds of GPUs and building eval pipelines. Earlier at Snap shipping multimodal LLMs to 100M&#43; people, diffusion pre-training, and AI research &amp; product delivery across text, image, and speech.">
+<title>Publications | George Grigorev Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="Publications - George Grigorev Blog">
 <meta name="author" content="George Grigorev">
-<link rel="canonical" href="https://ggrigorev.me/">
+<link rel="canonical" href="https://ggrigorev.me/publications/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.a090830a421002426baafbd314e38f149d77b4c48a12ee9312700d770b27fb26.css" integrity="sha256-oJCDCkIQAkJrqvvTFOOPFJ13tMSKEu6TEnANdwsn&#43;yY=" rel="preload stylesheet" as="style">
 <link rel="icon" href="https://ggrigorev.me/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="https://ggrigorev.me/favicon-16x16.png">
@@ -19,8 +18,8 @@
 <link rel="mask-icon" href="https://ggrigorev.me/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" type="application/rss+xml" href="https://ggrigorev.me/index.xml" title="rss">
-<link rel="alternate" hreflang="en" href="https://ggrigorev.me/">
+<link rel="alternate" type="application/rss+xml" href="https://ggrigorev.me/publications/index.xml" title="rss">
+<link rel="alternate" hreflang="en" href="https://ggrigorev.me/publications/">
 <noscript>
     <style>
         #theme-toggle,
@@ -99,26 +98,28 @@
           gtag('js', new Date());
           gtag('config', 'G-F5HXWCK8S4');
         }
-      </script><meta property="og:url" content="https://ggrigorev.me/">
+      </script><meta property="og:url" content="https://ggrigorev.me/publications/">
   <meta property="og:site_name" content="George Grigorev Blog">
-  <meta property="og:title" content="About">
+  <meta property="og:title" content="Publications">
   <meta property="og:description" content="Previously at Together AI running distributed training on hundreds of GPUs and building eval pipelines. Earlier at Snap shipping multimodal LLMs to 100M&#43; people, diffusion pre-training, and AI research &amp; product delivery across text, image, and speech.">
   <meta property="og:locale" content="en-us">
   <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="About">
+<meta name="twitter:title" content="Publications">
 <meta name="twitter:description" content="Previously at Together AI running distributed training on hundreds of GPUs and building eval pipelines. Earlier at Snap shipping multimodal LLMs to 100M&#43; people, diffusion pre-training, and AI research &amp; product delivery across text, image, and speech.">
+
 
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "George Grigorev Blog",
-  "url": "https://ggrigorev.me/",
-  "description": "Previously at Together AI running distributed training on hundreds of GPUs and building eval pipelines. Earlier at Snap shipping multimodal LLMs to 100M+ people, diffusion …",
-  "logo": "https://ggrigorev.me/favicon.ico",
-  "sameAs": [
-      "https://github.com/thepowerfuldeez", "https://twitter.com/iamgrigorev", "https://www.linkedin.com/in/george-grigorev/"
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Publications",
+      "item": "https://ggrigorev.me/publications/"
+    }
   ]
 }
 </script>
@@ -166,12 +167,12 @@
         <ul id="menu">
             <li>
                 <a href="https://ggrigorev.me/" title="About">
-                    <span class="active">About</span>
+                    <span>About</span>
                 </a>
             </li>
             <li>
                 <a href="https://ggrigorev.me/publications/" title="Publications">
-                    <span>Publications</span>
+                    <span class="active">Publications</span>
                 </a>
             </li>
             <li>
@@ -182,94 +183,23 @@
         </ul>
     </nav>
 </header>
-<main class="main"> 
-<article class="first-entry home-info">
-  <header class="entry-header">
-    <div class="home-socials"><a
-        href="https://github.com/thepowerfuldeez"
-        target="_blank"
-        rel="noopener noreferrer me"
-        title="Github"
-        aria-label="Github"
-        class="social-github"
-      ><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-    stroke-linecap="round" stroke-linejoin="round">
-    <path
-        d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
-    </path>
-</svg></a><a
-        href="https://twitter.com/iamgrigorev"
-        target="_blank"
-        rel="noopener noreferrer me"
-        title="X"
-        aria-label="X"
-        class="social-twitter"
-      ><svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          role="img"
-          aria-hidden="true"
-        >
-          <path
-            d="M19.633 0h-3.662L12 7.396 8.029 0H0l8.531 12.74L0 24h3.732l5.791-8.667L15.949 24H24l-8.928-13.145L24 0z"
-          />
-        </svg></a><a
-        href="https://www.linkedin.com/in/george-grigorev/"
-        target="_blank"
-        rel="noopener noreferrer me"
-        title="Linkedin"
-        aria-label="Linkedin"
-        class="social-linkedin"
-      ><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-    stroke-linecap="round" stroke-linejoin="round">
-    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
-    <rect x="2" y="9" width="4" height="12"></rect>
-    <circle cx="4" cy="4" r="2"></circle>
-</svg></a></div>
-    <h1>Hi, I’m George</h1>
-  </header>
-  <div class="entry-content">
-    <p>Currently: exploring pre‑training LLM training efficiency, sample
-efficiency, building small coding LLMs, and finance LLM agents.</p>
-<p>Previously I worked at <a href="https://www.together.ai/">Together AI</a> running
-distributed training on hundreds of GPUs and building evals. At
-<a href="https://snap.com/">Snap</a> I developed multimodal LLMs that reached 100M+
-users, did diffusion model pre-training, built AI applications
-end-to-end, and contributed to research. I work across text, image, and
-speech.</p>
-<h3 id="highlights">Highlights</h3>
-<ul>
-<li>Large-scale fine-tuning and evaluation of open-source LLMs (1B–405B),
-with a focus on training efficiency and model quality.</li>
-<li>Built distributed training platforms (60+ LLMs, 600+ GPUs) and
-LLM-as-a-judge evaluation pipelines (Flyte-orchestrated).</li>
-<li>Long-context fine-tuning: custom sequence parallelism with
-<code>flash_attn_varlen</code> for 131k-context (LLaMA 3.1 70B) and 16k-context
-(LLaMA 3.1 405B).</li>
-</ul>
-<p>See also: <a href="/publications/">Publications</a></p>
-
-  </div>
-</article>
-
-<article class="post-entry"> 
-  <header class="entry-header">
-    <h2 class="entry-hint-parent">Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE
-      <span class="entry-hint" title="Draft">
-        <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" fill="currentColor">
-          <path
-            d="M160-410v-60h300v60H160Zm0-165v-60h470v60H160Zm0-165v-60h470v60H160Zm360 580v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q9 9 13 20t4 22q0 11-4.5 22.5T862.09-380L643-160H520Zm300-263-37-37 37 37ZM580-220h38l121-122-18-19-19-18-122 121v38Zm141-141-19-18 37 37-18-19Z" />
-        </svg>
-      </span>
-    </h2>
-  </header>
-  <div class="entry-content">
-    <p>Byte-level BPE from first principles: what matters for speed and quality, how to implement it cleanly, and why a SuperBPE variant can lift sample efficiency.</p>
-  </div>
-  <footer class="entry-footer"><span title='2025-10-05 00:00:00 +0000 UTC'>October 5, 2025</span>&nbsp;·&nbsp;<span>11 min</span>&nbsp;·&nbsp;<span>2254 words</span>&nbsp;·&nbsp;<span>George Grigorev</span></footer>
-  <a class="entry-link" aria-label="post link to Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE" href="https://ggrigorev.me/posts/tokenizer-superbpe/"></a>
-</article>
+<main class="main"><h1 class="mb-6">Publications</h1><section class="pub-list"><article class="pub-item">
+      <h3 class="pub-title">
+        <a href="https://www.together.ai/blog/introducing-together-evaluations" target="_blank" rel="noopener">Together Evaluations: Benchmark Models for Your Tasks</a>
+      </h3>
+      <div class="pub-meta"><span class="pub-type">Blog</span><time datetime="2025-07-28" class="pub-date">Jul 2025</time></div></article><article class="pub-item">
+      <h3 class="pub-title">
+        <a href="https://www.together.ai/blog/long-context-fine-tuning-a-technical-deep-dive" target="_blank" rel="noopener">Long Context Fine‑Tuning: A Technical Deep Dive</a>
+      </h3>
+      <div class="pub-meta"><span class="pub-type">Blog</span><time datetime="2024-11-25" class="pub-date">Nov 2024</time></div></article><article class="pub-item">
+      <h3 class="pub-title">
+        <a href="https://patents.google.com/patent/US20240412433A1/" target="_blank" rel="noopener">Techniques for generating a stylized media content item with a generative neural network</a>
+      </h3>
+      <div class="pub-meta"><span class="pub-type">Patent</span><time datetime="2023-11-09" class="pub-date">Nov 2023</time></div></article><article class="pub-item">
+      <h3 class="pub-title">
+        <a href="https://patents.google.com/patent/US20240265498A1/" target="_blank" rel="noopener">Face identity preservation for image‑to‑image models using stable diffusion generative model</a>
+      </h3>
+      <div class="pub-meta"><span class="pub-type">Patent</span><time datetime="2023-02-03" class="pub-date">Feb 2023</time></div></article></section>
     </main>
     
 <footer class="footer">

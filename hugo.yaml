@@ -1,0 +1,111 @@
+baseURL: https://ggrigorev.me/
+languageCode: en-us
+title: George Grigorev Blog
+theme: PaperMod
+
+params:
+  env: production
+  author: George Grigorev
+  name: George Grigorev
+  bio: >-
+    Previously I worked at Together AI running distributed training on
+    hundreds of GPUs and building evals. At Snap I developed multimodal LLMs
+    that reached 100M+ users, did diffusion model pre-training, built AI
+    applications end-to-end, and contributed to research. I work across text,
+    image, and speech.
+  description: >-
+    Previously at Together AI running distributed training on hundreds of GPUs
+    and building eval pipelines. Earlier at Snap shipping multimodal LLMs to
+    100M+ people, diffusion pre-training, and AI research & product delivery
+    across text, image, and speech.
+  mainSections:
+    - posts
+  defaultTheme: auto
+  ShowReadingTime: true
+  ShowWordCount: true
+  ShowPostNavLinks: true
+  ShowCodeCopyButtons: true
+  disableHLJS: false
+  ShowToc: true
+  TocOpen: true
+  math:
+    enable: true
+    engine: mathjax
+  mathEngine: mathjax
+  homeInfoParams:
+    Title: Hi, I’m George
+    Content: |-
+      Currently: exploring pre‑training LLM training efficiency, sample
+      efficiency, building small coding LLMs, and finance LLM agents.
+
+      Previously I worked at [Together AI](https://www.together.ai/) running
+      distributed training on hundreds of GPUs and building evals. At
+      [Snap](https://snap.com/) I developed multimodal LLMs that reached 100M+
+      users, did diffusion model pre-training, built AI applications
+      end-to-end, and contributed to research. I work across text, image, and
+      speech.
+
+      ### Highlights
+      - Large-scale fine-tuning and evaluation of open-source LLMs (1B–405B),
+        with a focus on training efficiency and model quality.
+      - Built distributed training platforms (60+ LLMs, 600+ GPUs) and
+        LLM-as-a-judge evaluation pipelines (Flyte-orchestrated).
+      - Long-context fine-tuning: custom sequence parallelism with
+        `flash_attn_varlen` for 131k-context (LLaMA 3.1 70B) and 16k-context
+        (LLaMA 3.1 405B).
+
+      See also: [Publications](/publications/)
+    Buttons:
+      - name: Publications
+        url: /publications/
+      - name: Blog
+        url: /posts/
+  socialIcons:
+    - name: github
+      url: https://github.com/thepowerfuldeez
+    - name: twitter
+      url: https://twitter.com/iamgrigorev
+    - name: linkedin
+      url: https://www.linkedin.com/in/george-grigorev/
+  linkedin: george-grigorev
+  twitter: iamgrigorev
+  github: thepowerfuldeez
+
+menu:
+  main:
+    - identifier: about
+      name: About
+      url: /
+      weight: 10
+    - identifier: publications
+      name: Publications
+      url: /publications/
+      weight: 20
+    - identifier: blog
+      name: Blog
+      url: /posts/
+      weight: 30
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+    extensions:
+      footnote: true
+  tableOfContents:
+    startLevel: 2
+    endLevel: 2
+
+caches:
+  images:
+    dir: ':cacheDir/images'
+
+services:
+  googleAnalytics:
+    id: G-F5HXWCK8S4
+
+environments:
+  production:
+    baseURL: https://ggrigorev.me/
+  development:
+    baseURL: http://localhost:1313/

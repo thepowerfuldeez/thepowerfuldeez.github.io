@@ -1,156 +1,283 @@
-<!doctype html>
+<!DOCTYPE html>
+<html lang="en" dir="auto">
 
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Posts | George Grigorev Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="Posts - George Grigorev Blog">
+<meta name="author" content="George Grigorev">
+<link rel="canonical" href="https://ggrigorev.me/posts/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.a090830a421002426baafbd314e38f149d77b4c48a12ee9312700d770b27fb26.css" integrity="sha256-oJCDCkIQAkJrqvvTFOOPFJ13tMSKEu6TEnANdwsn&#43;yY=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://ggrigorev.me/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://ggrigorev.me/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://ggrigorev.me/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://ggrigorev.me/apple-touch-icon.png">
+<link rel="mask-icon" href="https://ggrigorev.me/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" type="application/rss+xml" href="https://ggrigorev.me/posts/index.xml" title="rss">
+<link rel="alternate" hreflang="en" href="https://ggrigorev.me/posts/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
 
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
 
+            .list {
+                background: var(--theme);
+            }
 
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
 
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
 
-
-<html
-  class="not-ready lg:text-base"
-  style="--bg:#faf8f1"
-  lang="en-us"
-  dir="ltr"
-><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
-  <meta charset="utf-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, shrink-to-fit=no"
-  />
-
-  
-  <title>Posts - George Grigorev Blog</title>
-
-  
-  <meta name="theme-color" />
-
-  
-  <meta
-    name="description"
-    content="A personal blog"
-  />
-  <meta name="author" content="George Grigorev Blog" /><link rel="preload stylesheet" as="style" href="http://localhost:1313/main.min.css" />
-
-  
-  <link rel="preload" as="image" href="http://localhost:1313/theme.png" />
-
-  
-
-  
-
-  
-
-  
-  <link
-    rel="icon"
-    href="http://localhost:1313/favicon.ico"
-  />
-  <link
-    rel="apple-touch-icon"
-    href="http://localhost:1313/apple-touch-icon.png"
-  />
-
-  <meta name="generator" content="Hugo 0.149.1">
-</head>
-<body
-    class="bg-(--bg) text-black antialiased duration-200 ease-out [-webkit-tap-highlight-color:transparent] dark:text-white"
-  ><header
-  class="mx-auto flex h-[4.5rem] max-w-(--w) px-8 whitespace-nowrap lg:justify-center"
->
-  <div class="relative z-50 flex items-center ltr:mr-auto rtl:ml-auto">
-    <a
-      class="-translate-y-[1px] text-2xl font-medium"
-      href="http://localhost:1313/"
-      >George Grigorev Blog</a
-    >
-    <div
-      class="btn-dark text-[0px] ltr:ml-4 rtl:mr-4 h-6 w-6 shrink-0 cursor-pointer [background:url(./theme.png)_left_center/_auto_theme('spacing.6')_no-repeat] [transition:_background-position_0.4s_steps(5)] dark:[background-position:right]"
-      role="button"
-      aria-label="Dark"
-    ></div>
-  </div>
-
-  <div
-    class="btn-menu relative z-50 flex h-[4.5rem] w-[5rem] shrink-0 cursor-pointer flex-col items-center justify-center gap-2.5 lg:hidden ltr:-mr-8 rtl:-ml-8"
-    role="button"
-    aria-label="Menu"
-  ></div>
-
-  <script>
-    
-    const htmlClass = document.documentElement.classList;
-    setTimeout(() => {
-      htmlClass.remove('not-ready');
-    }, 10);
-
-    
-    const btnMenu = document.querySelector('.btn-menu');
-    btnMenu.addEventListener('click', () => {
-      htmlClass.toggle('open');
-    });
-
-    
-    const metaTheme = document.querySelector('meta[name="theme-color"]');
-    const lightBg = '#faf8f1'.replace(/"/g, '');
-    const setDark = (isDark) => {
-      metaTheme.setAttribute('content', isDark ? '#000' : lightBg);
-      htmlClass[isDark ? 'add' : 'remove']('dark');
-      localStorage.setItem('dark', isDark);
+    </style>
+</noscript><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="/css/custom.css"><script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [ ['$', '$'], ['\\(', '\\)'] ],
+        displayMath: [ ['$$', '$$'], ['\\[', '\\]'] ],
+        processEscapes: true,
+        tags: 'ams',
+        packages: { '[+]': ['noerrors'] },
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+      },
+      loader: { load: ['[tex]/noerrors'] },
     };
-
-    
-    const darkScheme = window.matchMedia('(prefers-color-scheme: dark)');
-    if (htmlClass.contains('dark')) {
-      setDark(true);
-    } else {
-      const darkVal = localStorage.getItem('dark');
-      setDark(darkVal ? darkVal === 'true' : darkScheme.matches);
-    }
-
-    
-    darkScheme.addEventListener('change', (event) => {
-      setDark(event.matches);
-    });
-
-    
-    const btnDark = document.querySelector('.btn-dark');
-    btnDark.addEventListener('click', () => {
-      setDark(localStorage.getItem('dark') !== 'true');
+  </script>
+  <script
+    async
+    id="MathJax-script"
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+  ></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', function () {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise();
+      }
     });
   </script>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-F5HXWCK8S4"></script>
+      <script>
+        var doNotTrack = false;
+        if ( false ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-F5HXWCK8S4');
+        }
+      </script><meta property="og:url" content="https://ggrigorev.me/posts/">
+  <meta property="og:site_name" content="George Grigorev Blog">
+  <meta property="og:title" content="Posts">
+  <meta property="og:description" content="Previously at Together AI running distributed training on hundreds of GPUs and building eval pipelines. Earlier at Snap shipping multimodal LLMs to 100M&#43; people, diffusion pre-training, and AI research &amp; product delivery across text, image, and speech.">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Posts">
+<meta name="twitter:description" content="Previously at Together AI running distributed training on hundreds of GPUs and building eval pipelines. Earlier at Snap shipping multimodal LLMs to 100M&#43; people, diffusion pre-training, and AI research &amp; product delivery across text, image, and speech.">
 
-  <div
-    class="nav-wrapper fixed inset-x-0 top-full z-40 flex h-full flex-col justify-center bg-(--bg) pb-16 duration-200 select-none lg:static lg:h-auto lg:flex-row lg:bg-transparent! lg:pb-0 lg:transition-none"
-  >
-  </div>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://ggrigorev.me/posts/"
+    }
+  ]
+}
+</script>
+</head>
+
+<body class="list" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://ggrigorev.me/" accesskey="h" title="George Grigorev Blog (Alt + H)">George Grigorev Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://ggrigorev.me/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://ggrigorev.me/publications/" title="Publications">
+                    <span>Publications</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://ggrigorev.me/posts/" title="Blog">
+                    <span class="active">Blog</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
 </header>
-<main
-      class="prose prose-neutral dark:prose-invert relative mx-auto min-h-[calc(100vh-9rem)] max-w-(--w) px-8 pt-14 pb-16"
-    >
+<main class="main"> 
+<header class="page-header">
+  <h1>
+    Posts
+  </h1>
+</header>
 
-<section class="relative my-10 first-of-type:mt-0 last-of-type:mb-0"><h2 class="my-0!">My First Post</h2>
-  <time class="text-xs antialiased opacity-60"
-    >Sep 7, 2025</time
-  >
-  <a class="absolute inset-0 text-[0px]" href="http://localhost:1313/posts/my-first-post/"
-    >My First Post</a
-  >
-</section></main><footer
-  class="mx-auto flex h-[4.5rem] max-w-(--w) items-center px-8 text-xs tracking-wider uppercase opacity-60"
->
-  <div class="mr-auto">&copy;2025
-    <a class="link" href="http://localhost:1313/">George Grigorev Blog</a></div>
-  <a class="link mx-6" href="https://gohugo.io/" rel="noopener" target="_blank"
-    >powered by hugo️️</a
-  >️
-  <a
-    class="link"
-    href="https://github.com/nanxiaobei/hugo-paper"
-    rel="noopener"
-    target="_blank"
-    >hugo-paper</a
-  >
+<article class="post-entry"> 
+  <header class="entry-header">
+    <h2 class="entry-hint-parent">Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE
+      <span class="entry-hint" title="Draft">
+        <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" fill="currentColor">
+          <path
+            d="M160-410v-60h300v60H160Zm0-165v-60h470v60H160Zm0-165v-60h470v60H160Zm360 580v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q9 9 13 20t4 22q0 11-4.5 22.5T862.09-380L643-160H520Zm300-263-37-37 37 37ZM580-220h38l121-122-18-19-19-18-122 121v38Zm141-141-19-18 37 37-18-19Z" />
+        </svg>
+      </span>
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>Byte-level BPE from first principles: what matters for speed and quality, how to implement it cleanly, and why a SuperBPE variant can lift sample efficiency.</p>
+  </div>
+  <footer class="entry-footer"><span title='2025-10-05 00:00:00 +0000 UTC'>October 5, 2025</span>&nbsp;·&nbsp;<span>11 min</span>&nbsp;·&nbsp;<span>2254 words</span>&nbsp;·&nbsp;<span>George Grigorev</span></footer>
+  <a class="entry-link" aria-label="post link to Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE" href="https://ggrigorev.me/posts/tokenizer-superbpe/"></a>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://ggrigorev.me/">George Grigorev Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
 </footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
 </body>
+
 </html>
