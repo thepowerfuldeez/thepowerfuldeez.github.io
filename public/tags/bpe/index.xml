@@ -9,7 +9,7 @@
     <lastBuildDate>Sun, 05 Oct 2025 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://ggrigorev.me/tags/bpe/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE</title>
+      <title>Tokenization from first principles</title>
       <link>https://ggrigorev.me/posts/tokenizer-superbpe/</link>
       <pubDate>Sun, 05 Oct 2025 00:00:00 +0000</pubDate>
       <guid>https://ggrigorev.me/posts/tokenizer-superbpe/</guid>

@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head><meta charset="utf-8">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
-<title>Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE | George Grigorev Blog</title>
-<meta name="keywords" content="tokenization, bpe, llm">
+<title>Tokenization from first principles | George Grigorev Blog</title>
+<meta name="keywords" content="tokenization, bpe, llm, superbpe">
 <meta name="description" content="Byte-level BPE from first principles: what matters for speed and quality, how to implement it cleanly, and why a SuperBPE variant can lift sample efficiency.">
 <meta name="author" content="George Grigorev">
-<link rel="canonical" href="https://ggrigorev.me/posts/tokenizer-superbpe/">
+<link rel="canonical" href="http://localhost:1313/posts/tokenizer-superbpe/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.a090830a421002426baafbd314e38f149d77b4c48a12ee9312700d770b27fb26.css" integrity="sha256-oJCDCkIQAkJrqvvTFOOPFJ13tMSKEu6TEnANdwsn&#43;yY=" rel="preload stylesheet" as="style">
-<link rel="icon" href="https://ggrigorev.me/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="https://ggrigorev.me/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="https://ggrigorev.me/favicon-32x32.png">
-<link rel="apple-touch-icon" href="https://ggrigorev.me/apple-touch-icon.png">
-<link rel="mask-icon" href="https://ggrigorev.me/safari-pinned-tab.svg">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="en" href="https://ggrigorev.me/posts/tokenizer-superbpe/">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/tokenizer-superbpe/">
 <noscript>
     <style>
         #theme-toggle,
@@ -97,20 +97,21 @@
           gtag('js', new Date());
           gtag('config', 'G-F5HXWCK8S4');
         }
-      </script><meta property="og:url" content="https://ggrigorev.me/posts/tokenizer-superbpe/">
+      </script><meta property="og:url" content="http://localhost:1313/posts/tokenizer-superbpe/">
   <meta property="og:site_name" content="George Grigorev Blog">
-  <meta property="og:title" content="Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE">
+  <meta property="og:title" content="Tokenization from first principles">
   <meta property="og:description" content="Byte-level BPE from first principles: what matters for speed and quality, how to implement it cleanly, and why a SuperBPE variant can lift sample efficiency.">
   <meta property="og:locale" content="en-us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="posts">
-    <meta property="article:published_time" content="2025-10-05T00:00:00+00:00">
-    <meta property="article:modified_time" content="2025-10-05T00:00:00+00:00">
+    <meta property="article:published_time" content="2025-10-07T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-10-07T00:00:00+00:00">
     <meta property="article:tag" content="Tokenization">
     <meta property="article:tag" content="Bpe">
     <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Superbpe">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE">
+<meta name="twitter:title" content="Tokenization from first principles">
 <meta name="twitter:description" content="Byte-level BPE from first principles: what matters for speed and quality, how to implement it cleanly, and why a SuperBPE variant can lift sample efficiency.">
 
 
@@ -123,13 +124,13 @@
       "@type": "ListItem",
       "position":  1 ,
       "name": "Posts",
-      "item": "https://ggrigorev.me/posts/"
+      "item": "http://localhost:1313/posts/"
     }, 
     {
       "@type": "ListItem",
       "position":  2 ,
-      "name": "Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE",
-      "item": "https://ggrigorev.me/posts/tokenizer-superbpe/"
+      "name": "Tokenization from first principles",
+      "item": "http://localhost:1313/posts/tokenizer-superbpe/"
     }
   ]
 }
@@ -138,31 +139,31 @@
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE",
-  "name": "Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE",
+  "headline": "Tokenization from first principles",
+  "name": "Tokenization from first principles",
   "description": "Byte-level BPE from first principles: what matters for speed and quality, how to implement it cleanly, and why a SuperBPE variant can lift sample efficiency.",
   "keywords": [
-    "tokenization", "bpe", "llm"
+    "tokenization", "bpe", "llm", "superbpe"
   ],
-  "articleBody": "In this blog post I will share my experience with building a BPE tokenizer from scratch, analyzing its quality, sample efficiency, and efficient implementation.\nThis work started as part of the excellent CS336 “LLMs from Scratch” course, but then quickly developed into its own mini-project due to my curiosity to explore things further.\nI’ve now shared all code in my repo\nIntro Tokenization is needed to convert your text into numeric representation that is useful for training LLMs (and to essentially compress your data too, reducing sequence size)\nLet’s discuss BPE tokenization algorithm:\nGeneral scheme of BPE training\nEach string character in UTF-8 encoding is represented as bytes (values from 0 to 255). We convert text to bytes. This is our initial set of tokens.\nAt each step: 1.\tCount adjacent token pair frequencies. 2.\tMerge the most frequent pair into a new token ID (sequence becomes shorter). 3.\tRepeat until you hit your target vocab size.\nLarger token ID -\u003e later it was created from merge.\nByte-level BPE accepts bytes and returns sequence of ints (this can be saved as *uint16* if your vocab size is less than 65536), and no input is left un-tokenized (in contrast to earlier tokenizers which used token for unknown tokens that don’t fit into vocab)\nSingle training step of BPE algorithm\nHere we make a frequency count for each pair of numbers, select max pair by this count and replace it with a new token ID.\nThere are few nuances in the implementation.\nNot all bytes are created equal Since byte is just a number from 0 to 255, but we have much more characters than 256, we represent it with variable amount of bytes. An average English text would be 1.25 bytes/character.\nEach UTF-8 code point is represented by 1–4 bytes, depending on the character. ASCII (U+0000–U+007F) → 1 byte Latin, Cyrillic, etc. → 2 bytes Most CJK (Chinese/Japanese/Korean) → 3 bytes Rare supplementary (emoji, historic scripts) → 4 bytes Pre-tokenization It’s easy to show the naïve algorithm is $O(N^2)$\nFor large files, even a single iteration becomes very computationally expensive (for 5 GB file, $N$ would be 4e9 and single step would take 100+ days on modern CPUs!)\nOne optimization that we could use is to split whole training corpus into words (split by token ID 32 (\" “) in this example – or, more generally, by any whitespace character) and group words together via hashmap.\nThen, knowing the count of each pre-token, true count for a pair of numbers becomes frequency(pair within word) × pre-token count\nIt’s even better to split not just by delimiter, but by a more complicated regex. For example, this is the regex used when training GPT-2:\n'(?:[sdmt]|ll|ve|re)| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+ It splits text “Let’s consider tokenization word-by-word” like this:\n['Let', \"'s\", ' consider', ' tokenization', ' word', '-', 'by', '-', 'word'] Notice we attach whitespace to the left.\nWhat’s SOTA in regex patterns? Nowadays, people use better regex to handle code, long numbers or delimiters smarter.\nDigits: triad chunking with \\p{N}{1,3}; support for thousands separators (, and _), decimals, scientific notation, and percents. These help BPE learn reusable numeric chunks without exploding vocab. It also improves math benchmarks since we represent numbers more faithfully. Contractions: handle both ASCII ’ and curly ’, case-insensitive, so “It’s”, “IT’S”, “it’s” → consistent splits. Punctuation: keep [^\\s\\p{L}\\p{N}]+ to group operators/emoji/punct as learned units. (this part is advanced and requires a non-regex grapheme/emoji segmenter; regex alone won’t cleanly capture all emoji families.) In addition, when it comes to data preprocessing, there’s also a notion of special tokens that we do not split into subwords, or into bytes, i.e., they are not involved in the training. One of the most popular special token examples - end of text. It is important to keep it as it is as we use it to split documents with each other, and tell the LLM where the sequence ends, so that at inference we would have an LLM that can actually stop its generation :)\nWrapping up Generally, now whole training pipeline looks like Pretokenization + N iterations of merges.\nPretokenization was rewritten in Rust (via PyO3). The Rust code splits text with a regex and counts pre-tokens directly, avoiding round-tripping large Python string lists (pickle/marshalling). I used simdutf, ahash for efficient decoding and counting.\nSingle-process benchmark (1.5M lines):\nBaseline (Python): 67.2 s total – split: 45.6 s, count: 17.3 s Iter 1 (Rust split, Python count): ~26.0 s (split) + 17.3 s (count) Iter 2 (Rust split + count): 21.2 s total Code\nOther details There are still a couple of questions related to merging process:\nHow to detect the most frequent pair inside a pre-token efficiently? Do we need some specific data structure? How to most efficiently merge two tokens together and update the list in-place? Is there a difference between encoding during training and during inference? Let me answer all of those questions at once. I will share the data structures, some hacks, and the inference implementation. That might not be the best algorithm overall, but this is what I found worked for me and hopefully this can give you some food for thought.\nFirst of all, for training our main goal is to be able to find the most frequent pair very quickly. Unfortunately there’s not much we could do to merge faster during training. We still need to linearly scan the sequence.\nLet’s cache pre_token_counts, updated_pre_tokens, all_pair_counts, pair_to_pre_tokens.\nall_pair_counts is the most important map. We take the top-1 count each step to get the max pair.\nTwo observations:\nAfter each update, we don’t need to re-compute all_pair_counts. We know that most pairs are untouched, so we keep only pre-tokens that have been updated (updated_pre_tokens). Moreover, we know that frequencies of pairs change in deterministic order. So, if we had a sequence (1, 2, 3, 4) and merged (2, 3) -\u003e 99: Subtract counts for pairs destroyed by the merge. Adjust counts for pairs that touch the merged span (e.g., (1,2)→(1,99), (3,4)→(99,4)). Leave everything else alone. Including these modifications lets us cache all_pair_counts and update it after each iteration instead of re-computing.\nThis change reduced my total training time 7x.\nWe know there are situations where top-k pairs from all_pair_counts remain the same (so top-2 becomes top-1 in the next step, and if we know that in advance, we could retrieve next max pair in O(1)). Intuitively, this can be if our updated frequencies in all_pair_counts do not touch any of the top-k keys, or at least do not drive them too high. This is a pretty weak assumption but it helps to reduce the search space and avoid resorting keys of all_pair_counts every iteration. A natural data structure for all_pair_counts is a max-heap. Updates are $O(log(N))$, and retrieving the max is $O(1)$. When I tried it, I noticed that we add/remove keys too frequently, so that the overhead of max-heap becomes too high. I keep it as a dict and try to sort elements when needed.\nSo in practice I have heuristics to check if top-k keys in all pairs counts are not updated, so I reduce total amounts of sorting to find the most frequent pair. I suspect we could go even further and employ probabilistic algorithms.\nInference Now we don’t need to find the most frequent token anymore, and all of our merges are static. We convert text to bytes and apply all merges in the same order as we obtained them during training. What’s the best data structure to store and apply the merges to our sequence?\nI ended up using doubly linked list for the sequence of tokens for each word (Note that in this case we don’t strictly need pre-tokens; we can process the whole sequence until we’ve applied all merges)\nWe start with a chain of tokens, each with pointers to the next and previous tokens. We do a linear scan until we find the corresponding merge, replace the first element with the merged token ID, unlink second element, re-link updated token to the next.next. Finally, LeetCode is useful!!!\nSuperBPE After we trained tokenizer and spent so much time implementing it from scratch instead of just using huggingface tokenizers, we need to justify all of that time and train something more useful. Welcome SuperBPE.\nSuperBPE is a fairly recent work, and in my opinion underexplored. When I sat implementing BPE from scratch I couldn’t get rid of an idea of this pre-tokenization. Why restrict ourselves to single words? Doing pre-tokens seems like a useful optimization hack, but language might not always work in words, but rather concepts? I could easily imagine cases where frequencies of multi-word spans can exceed those of adjacent byte-pairs. Language is redundant and contains phrases like “such as”, “to be considered”, “for example” which is logical to represent as a single token. SuperBPE solves exactly that. Now tokens can represent multiple words at once.\nIn order to implement SuperBPE, the only thing we need to change is our “pre_token_counts” representation. Instead of words going to each key, we could put a whole document there. It’s a huge dict, but the algorithm still works.\nI tested it and consistently hit OOM, or my training would never finish (actually it’s the same problem as we started this blog post with). So I added a few heuristics: I split on punctuation; cap pre-token length at 10 tokens (only when a span exceeds 20 tokens), and apply few other heuristics + reduced dataset size.\nOverview of SuperBPE\nFinal algorithm is still like 20x slower than my BPE implementation, but hopefully we don’t need to start from the beginning, as we could enable SuperBPE only at the last 20% of the training (this works better in practice, since we want for the BPE to learn general concepts inside words first (inter-word n-gram dependencies), and then lift this restriction)\nPractical aspects Okay, imagine you now have your implementation of tokenizer that is so flexible it allows your custom way of training. But a) no one cares if it’s not supported in tokenizers b) it’s really slow (it will require full rust rewrite and still for very large datasets will be slow)\nSo converting to tokenizers format to the rescue, turns out it’s not that hard!\nAfter inspecting some tokenizer vocabs (it’s stored inside tokenizer.json) i noticed a few things: a) it’s json, but my vocab is in bytes. I tried converting bytes to str, and that’s the whole point of Byte Level BPE - you cannot convert it to UTF-8 easily 😄 HF uses some interesting choice of mapping bytes to some obscure UTF-8 characters. Whitespace becomes Ġ , \\n becomes\nExperiments The most interesting part.\nI first trained my BPE implementation on good quality data. (About 500M tokens or 5 GB text file). I used an improved regex template with digit grouping and better splitting.\nFinished training in 38,562.8 s. Average iteration time: 0.764 s. Total sort time was 17,350.43 s.\nIt achieved compression ratio: 4.39 bytes per token\nTokenization speed on a full 12 GB file: 1193.2s -\u003e 10.3 MB/s\nSuperBPE is trained by resuming the basic BPE run from 26,000th iteration (roughly 80% of training).\nFinished training in 53 hours Sort time is 49% of it\n!!! It’s 20x slower, let’s see if it’s worth it\nI have used my baseline implementation of LLM training with hand-written Triton FlashAttention-2 and some tweaks.\nJust trained a 70M-param LLM to \u003c20 perplexity on DCLM in 5 hours – on a single consumer GPU.\nAll my convergence + sample-efficiency tricks are stacking beautifully.\nI now have separate repo with my research related to sample efficient GPT training, link in reply.\n— George Grigorev (@iamgrigorev) October 5, 2025 LLM Training Two tokenizers trained with 32700 vocab size: “baseline BPE tokenizer” and “SuperBPE” tokenizer\nDataset used: DCLM (edu subset, filtered with score \u003e 2.75) Token count: ~1.2B (24k iterations, 512 context length, 96 batch size, single GPU – RTX5090) Model vocab size: 32768 (multiple of 16 for better GPU utilization)\nNon-embedding parameter count: 70M\nAfter SuperBPE, dataset has 20% fewer tokens, so training is 20% more sample-efficient!\nThis matches results from the paper authors:\nSuper excited to see @moondream_ai's newest model use SuperBPE!! We did a little bit of analysis — using SuperBPE reduced their seqlen by 21% on average and made the token frequency distribution more uniform, meaning fewer hyper-frequent \u0026 hyper-rare tokens! https://t.co/6ZWNYWPOyx pic.twitter.com/KIk3gL5lvs\n— Alisa Liu @ COLM 🦙 (@alisawuffles) September 29, 2025 Let’s now analyze tokens that are produced in SuperBPE:\nI run training using optimal settings with Muon optimizer for 2D params and AdamW for 1D params and here’s my loss results for training:\nFirst run\nAfter running first experiment, I noticed significantly higher loss. Then I checked outputs, it looked great, subjectively even better than the baseline. Something is wrong! What’s suspicious is that val loss is exactly 25% higher (3.19 -\u003e 3.98). A-ha! Since each token now covers ~25% more text (because 1/(1-0.2)=1.25) and the model’s per-byte compression didn’t change, the per-token NLL (negative log-likelihood) should rise by that same 1.25x factor.\nI calculated train/val loss multipliers by comparing dataset lengths in tokens and re-run experiments.\nLoss scaled run\nInteresting, we are seeing identical plots. However, SuperBPE shows slightly lower grad-norm and pre-activation norms!\nPre-activation norms\nConsidering that during generation your model should now produce 20% less tokens, validation loss is the same as the baseline, and lower norms, we could call SuperBPE tokens bring more regularization, and consider this method a free lunch!\n",
-  "wordCount" : "2254",
+  "articleBody": "I’ve now shared all code in my repo\nIn this blog post I will share my experience with building a BPE tokenizer from scratch, analyzing its quality, sample efficiency, and efficient implementation.\nThis work started as part of the excellent CS336 “LLMs from Scratch” course, but then quickly developed into its own mini-project due to my curiosity to explore things further.\nDisclaimer\nAlgorithms presented in this blog post might not be optimal since I was never good at this, I am more a practical person that cares about efficiency as long as it improves quality. I would rather rewrite to Rust than make Python faster. This text is more like my journey into building tokenizers and achieving better sample efficiency than off-the-shelf solutions, since my end goal is ultimately achieving the best quality (or lowest loss) during LLM training.\nIntro Tokenization is needed to convert your text into numeric representation that is useful for training LLMs (and to essentially compress your data too, reducing sequence size)\nLet’s discuss BPE tokenization algorithm during training:\nEach string character in UTF-8 encoding is represented as bytes (values from 0 to 255). We convert text to bytes. This is our initial set of tokens.\nAt each step: 1.\tCount adjacent token pair frequencies. 2.\tMerge the most frequent pair into a new token ID (sequence becomes shorter). 3.\tRepeat until you hit your target vocab size.\nLarger token ID -\u003e later it was created from merge.\nGeneral scheme of BPE training\nByte-level BPE accepts bytes and returns sequence of ints (this can be saved as *uint16* if your vocab size is less than 65536), and no input is left un-tokenized (in contrast to earlier tokenizers which used token for unknown tokens that don’t fit into vocab)\nSingle training step of BPE algorithm\nHere we make a frequency count for each pair of numbers, select max pair by this count and replace it with a new token ID.\nThere are few nuances in the implementation.\nNot all bytes are created equal Since byte is just a number from 0 to 255, but we have much more characters than 256, we represent it with variable amount of bytes. An average English text would be 1.25 bytes/character.\nEach UTF-8 code point is represented by 1–4 bytes, depending on the character. ASCII (U+0000–U+007F) → 1 byte Latin, Cyrillic, etc. → 2 bytes Most CJK (Chinese/Japanese/Korean) → 3 bytes Rare supplementary (emoji, historic scripts) → 4 bytes Pre-tokenization It’s easy to show the naïve algorithm is $O(N^2)$ (or more concretely $\\Theta(VN)$ for $V$ being vocab size ($≈ N^2$ if $V\\propto N$))\nFor large files, even a single iteration becomes very computationally expensive (for 5 GB file, $N$ would be 4e9 and single step would take 100+ days on modern CPUs!)\nOne optimization that we could use is to split whole training corpus into words (split by token ID 32 (\" “) in this example – or, more generally, by any whitespace character) and group words together via hashmap.\nThen, knowing the count of each pre-token, true count for a pair of numbers becomes\nfrequency(pair within word) × pre-token count\nIt’s even better to split not just by delimiter, but by a more complicated regex. For example, this is the regex used when training GPT-2:\n'(?:[sdmt]|ll|ve|re)| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+ It splits text “Let’s consider tokenization word-by-word” like this:\n['Let', \"'s\", ' consider', ' tokenization', ' word', '-', 'by', '-', 'word'] Notice we attach whitespace to the left.\nSchematic representation of pre-tokenization\nWhat’s SOTA in regex patterns? Nowadays, people use better regex to handle code, long numbers or delimiters smarter.\nDigits: triad chunking with \\p{N}{1,3}; support for thousands separators (, and _), decimals, scientific notation, and percents. These help BPE learn reusable numeric chunks without exploding vocab. It also improves math benchmarks since we represent numbers more faithfully. Contractions: handle both ASCII ’ and curly ’, case-insensitive, so “It’s”, “IT’S”, “it’s” → consistent splits. Punctuation: keep [^\\s\\p{L}\\p{N}]+ to group operators/emoji/punct as learned units. (this part is advanced and requires a non-regex grapheme/emoji segmenter; regex alone won’t cleanly capture all emoji families.) In addition, when it comes to data preprocessing, there’s also a notion of special tokens that we do not split into subwords, or into bytes, i.e., they are not involved in the training. One of the most popular special token examples - end of text. It is important to keep it as it is as we use it to split documents with each other, and tell the LLM where the sequence ends, so that at inference we would have an LLM that can actually stop its generation :)\nTraining pipeline Generally, now whole training pipeline looks like Pretokenization + N iterations of merges. We would explore optimization for one merge iteration step below.\nPretokenization was rewritten in Rust (via PyO3). The Rust code splits text with a regex and counts pre-tokens directly, avoiding round-tripping large Python string lists (pickle/marshalling). I used simdutf, ahash for efficient decoding and counting.\nSingle-process benchmark (1.5M lines):\nBaseline (Python): 67.2 s total – split: 45.6 s, count: 17.3 s Iter 1 (Rust split, Python count): ~26.0 s (split) + 17.3 s (count) Iter 2 (Rust split + count): 21.2 s total Code\nPractical optimizations There are still a couple of questions related to merging process:\nHow to detect the most frequent pair inside a pre-token efficiently? Do we need some specific data structure? How to most efficiently merge two tokens together and update the list in-place? Is there a difference between encoding during training and during inference? Let me answer all of those questions at once. I will share the data structures, some hacks, and the inference implementation. That might not be the best algorithm overall, but this is what I found worked for me and hopefully this can give you some food for thought.\nFirst of all, for training our main goal is to be able to find the most frequent pair very quickly. Unfortunately there’s not much we could do to merge faster during training. We still need to linearly scan the sequence.\nLet’s cache pre_token_counts, updated_pre_tokens, all_pair_counts, pair_to_pre_tokens.\nall_pair_counts is the most important map. We take the top-1 count each step to get the max pair.\nTwo observations:\nAfter each update, we don’t need to re-compute all_pair_counts. We know that most pairs are untouched, so we keep only pre-tokens that have been updated (updated_pre_tokens). Moreover, we know that frequencies of pairs change in deterministic order. So, if we had a sequence (1, 2, 3, 4) and merged (2, 3) -\u003e 99: Subtract counts for pairs destroyed by the merge. Adjust counts for pairs that touch the merged span (e.g., (1,2)→(1,99), (3,4)→(99,4)). Leave everything else alone. Including these modifications lets us cache all_pair_counts and update it after each iteration instead of re-computing.\nThis change reduced my total training time 7x.\nWe know there are situations where top-k pairs from all_pair_counts remain the same (so top-2 becomes top-1 in the next step, and if we know that in advance, we could retrieve next max pair in O(1)). Intuitively, this can be if our updated frequencies in all_pair_counts do not touch any of the top-k keys, or at least do not drive them too high. This is a pretty weak assumption but it helps to reduce the search space and avoid resorting keys of all_pair_counts every iteration. Cache the top 10% from the previous sorted list. Re-sort only pairs involving keys updated in this iteration. Merge the cached top-10% with the newly sorted updated pairs and take the top-K. This reduces training time by a factor of 3x, obtaining 20x improvement over baseline.\nA natural data structure for all_pair_counts is a max-heap. Updates are $O(log(N))$, and retrieving the max is $O(1)$. When I tried it, I noticed that we add/remove keys too frequently, so that the overhead of max-heap becomes too high. I keep it as a dict and try to sort elements when needed.\nI wonder how these 2 optimizations change algorithmic complexity?\n$P$: # unique adjacent pairs in the whole corpus ($≤ N$).\n$\\Delta_t$: # distinct pair keys whose counts actually change at iteration t (typically $\\Delta_t \\ll N$)\nIf we store counts in a dict and only touch changed keys, per iter update cost is $\\Theta(\\Delta_t)$\nOver all merges, each token position can only be rewritten a constant number of times, so $\\sum_t O_t = \\mathcal O(N)$ and typically $\\sum_t \\Delta_t = \\tilde{\\mathcal O}(N)$\nTotal (amortized): $\\boxed{\\Theta\\big(N + M\\bar L + P + \\sum_t \\Delta_t\\big)}$ -\u003e $~O(N)$\nwhere $M$ is total numbero of pre-tokens and $\\bar L$ is mean length of a pre-token (in bytes)\nSorting heuristic: If we cache the top 10% from the previous sorted list, re-sort only pairs involving keys updated in this iteration\nSelecting the next max now costs about $\\Theta(\\Delta_t \\log \\Delta_t)$ per iter (to re-rank only changed keys), plus an occasional refresh of the cache ($\\Theta(P \\log P)$ every $R$ rounds) instead of $\\sum_t \\Delta_t$.\nIn practice, this cut sorting time by ~3× with no observed quality loss in my runs.\nNote: This is an approximation—there’s no strict guarantee that the true global top item won’t fall outside “updated pairs + cached top-10%”.\nI suspect we could go even further and employ probabilistic algorithms, Bucketed counts and Compact inverted index.\nFinal training loop pseudocode pre_token_counts = pre_tokenize(filepath) for n_iters iterations: # update self.pre_token_byte_counts in-place, while caching what's required self.new_id = self.vocab_size iter_merge_cached(self.pre_token_byte_counts) left, right = self.convert(self.new_id) self.vocab[self.new_id] = left+right self.merges.append(updated_key) Inference During inference (encoding), merges are fixed and we don’t need to find the most frequent token anymore. The task is to apply rules greedily and efficiently. What’s the best data structure to store and apply the merges to our sequence?\nI ended up using doubly linked list for the sequence of tokens for each word, so algorithm becomes:\nSplit some batch of text and convert to bytes Encode each pre-token as a doubly-linked list of token ids. Scan for the highest-priority merge that matches; when you merge (x,y)→z, replace x with z and unlink y. Finally, LeetCode is useful!!!\nAdditionally, since we don’t group pre-tokens into counts and instead stream tokenized outputs we lose speed. I applied LRU cache to fix that. We would cache results of input bytes so we don’t need to reapply merges again if we see the same pre-token again.\nSuperBPE After we trained tokenizer and spent so much time implementing it from scratch instead of just using huggingface tokenizers, we need to justify all of that time and train something more useful. Welcome SuperBPE.\nSuperBPE is a fairly recent work, and in my opinion underexplored. When I sat implementing BPE from scratch I couldn’t get rid of an idea of this pre-tokenization. Why restrict ourselves to single words? Doing pre-tokens seems like a useful optimization hack, but language might not always work in words, but rather concepts? I could easily imagine cases where frequencies of multi-word spans can exceed those of adjacent byte-pairs. Language is redundant and contains phrases like “such as”, “to be considered”, “for example” which is logical to represent as a single token. SuperBPE solves exactly that. Now tokens can represent multiple words at once.\nIn order to implement SuperBPE, the only thing we need to change is our “pre_token_counts” representation. Instead of words going to each key, we could put a whole document there. It’s a huge dict, but the algorithm still works.\nI tested it and consistently hit OOM, or my training would never finish (actually it’s the same problem as we started this blog post with). So I added a few heuristics: I split on punctuation; cap pre-token length at 10 tokens (only when a span exceeds 20 tokens), and apply few other heuristics + reduced dataset size.\nOverview of SuperBPE\nFinal algorithm is still like 20x slower than my BPE implementation, but hopefully we don’t need to start from the beginning, as we could enable SuperBPE only at the last 20% of the training (this works better in practice, since we want for the BPE to learn general concepts inside words first (inter-word n-gram dependencies), and then lift this restriction)\nPractical aspects Okay, imagine you now have implemented a tokenizer that is so flexible it allows your custom way of training.\nBut\na) no one cares if it’s not supported in tokenizers\nb) it’s still slow (it will require full Rust rewrite and perhaps for very large datasets will be slow)\nSo converting to tokenizers format to the rescue, turns out it’s not that hard!\nAfter inspecting some open-source tokenizer vocabs (it’s stored inside tokenizer.json file) i noticed a few things:\na) it’s serialized as json, but my vocab is stored in bytes (pickle). I tried converting bytes to str, and that’s the whole point of Byte Level BPE - you cannot convert it to UTF-8 easily 😄\nb) HF uses some interesting choice of mapping bytes to some obscure UTF-8 characters. Whitespace becomes Ġ , \\n becomes Ċ Turns out this was one of the quirks of Hugging Face’s tokenizers inherited from the original GPT-2 implementation by OpenAI.\nIn the GPT-2 tokenizer, every byte (0–255) is mapped to a unique, printable Unicode character so that text can be handled as normal strings in Python without losing byte information. They are chosen so that they are not used in typical English text.\nTLDR; \"Ġhello\" represents \" hello\".\nThis convention is purely aesthetic but became de-facto standard since GPT-2.\nHF transformers have some example scripts to adapt pickle based vocab and merges to JSON, so it’s not hard to write your own script.\nExperiments The most interesting part.\nI first trained my BPE implementation on good quality data from DCLM dataset. (About 500M tokens or 5 GB text file). I used an improved regex template with digit grouping and better splitting. My CPU is Ryzen 5\nFinished training in 38,562.8 s. Average iteration time: 0.764 s. Total sort time was 17,350.43 s. It achieved compression ratio: 4.39 bytes per token\nTokenization speed on a full 12 GB file: 1193.2s -\u003e 10.3 MB/s\nSuperBPE is trained by resuming the basic BPE run from 26,000th iteration (roughly 80% of training).\nFinished training in 53 hours\nSort time is 49% of it\n!!! It’s 20x slower, let’s see if it’s worth it\nWe could inspect vocab of SuperBPE to see that it’s indeed merged some whitespaces together into a single token or some phrases or code constructions. (screenshot is from the other experiment on slightly larger data and larger vocab)\nLLM Training I have used my baseline implementation of LLM training with hand-written Triton FlashAttention-2 and some tweaks.\nJust trained a 70M-param LLM to \u003c20 perplexity on DCLM in 5 hours – on a single consumer GPU.\nAll my convergence + sample-efficiency tricks are stacking beautifully.\nI now have separate repo with my research related to sample efficient GPT training, link in reply.\n— George Grigorev (@iamgrigorev) October 5, 2025 Two tokenizers trained with 32700 vocab size: “baseline BPE tokenizer” and “SuperBPE” tokenizer\nDataset used: DCLM (edu subset, filtered with score \u003e 2.75) Token count: ~1.2B (24k iterations, 512 context length, 96 batch size, single GPU – RTX5090) Model vocab size: 32768 (multiple of 16 for better GPU utilization)\nNon-embedding parameter count: 70M\nAfter SuperBPE, dataset has 20% fewer tokens, so training is 20% more sample-efficient!\nThis matches results from the paper authors:\nSuper excited to see @moondream_ai's newest model use SuperBPE!! We did a little bit of analysis — using SuperBPE reduced their seqlen by 21% on average and made the token frequency distribution more uniform, meaning fewer hyper-frequent \u0026 hyper-rare tokens! https://t.co/6ZWNYWPOyx pic.twitter.com/KIk3gL5lvs\n— Alisa Liu @ COLM 🦙 (@alisawuffles) September 29, 2025 Let’s now analyze tokens that are produced in SuperBPE:\nI run training using optimal settings with Muon optimizer for 2D params and AdamW for 1D params and here’s my loss results for training:\nFirst run\nAfter running first experiment, I noticed significantly higher loss. Then I checked outputs, it looked great, subjectively even better than the baseline. Something is wrong! What’s suspicious is that val loss is exactly 25% higher (3.19 -\u003e 3.98). A-ha! Since each token now covers ~25% more text (because 1/(1-0.2)=1.25) and the model’s per-byte compression didn’t change, the per-token NLL (negative log-likelihood) should rise by that same 1.25x factor.\nI calculated train/val loss multipliers by comparing dataset lengths in tokens and re-run experiments.\nLoss scaled run\nInteresting, we are seeing identical plots. However, SuperBPE shows slightly lower grad-norm and pre-activation norms!\nPre-activation norms\nConsidering that during generation your model should now produce 20% less tokens, validation loss is the same as the baseline, and lower norms, we could call SuperBPE tokens bring more regularization, and consider this method a free lunch!\nI ran some generations using both models, using temperature=0.8 and top_p=0.8 on prompts taken from test set.\n# Tokenizer N tokens Generated Text 1 BPE 41 Sacramento, California\nSacramento is the capital of the state of California, 13th largest city in the United States. It is the largest city in the state of California. 2 SuperBPE 75 Sacramento, California\nSacramento is the capital of the state of California, 29 miles (50 km) southwest of San Francisco. Sacramento is situated in the southern part of the state, in the Sierras del Norte mountain range, between Sacramento and the Sierra Nevada mountain range. The state has a population of 14,069,403 (July 2010 est.). 3 BPE 139 What is Clostridium Botulinum?\nClostridium Botulinum is a gram negative, rod-shaped bacterium that is most often found in the digestive tract of animals and humans. Clostridium Botulinum is also found in the human gut.\nWhat is the treatment for Clostridium Botulinum?\nThe most common treatment for Clostridium Botulinum is a dose of Clostridium Botulinum injection. This is done under the supervision of a doctor.\nWhat is the prognosis for Clostridium Botulinum?\nClostridium Botulinum is a life-threatening infection that can be fatal. 4 SuperBPE 93 What is Clostridium Botulinum?\nThe Clostridium Botulinum is a Gram-positive, motile, spore-forming, anaerobic bacterium. It is able to live on various substrates, including dead plant tissue, organic matter, dead animals, and living organisms. It is a zoonotic organism which lives in soil and under aquatic plants. It usually occurs on soil surfaces or on surfaces that are exposed to direct sunlight, moisture, chemicals, or microbial activity. 5 BPE 17 Old age related health problems such as heart disease, diabetes, and high blood pressure. 6 SuperBPE 35 Old age related health problems are more common in older adults than younger people. In addition, older adults with diabetes are also more likely to have higher blood pressure, stroke, heart disease, kidney disease, and certain types of cancer. BPE mistakes:\n#1 is factually wrong (not 13th largest, not largest in CA)\n#3 is factually wrong (not gram negative, but gram positive)\nSuperBPE mistakes:\n#2 - Geography wrong (it’s northeast, not southwest)\nSuperBPE is more stable, coherent and factual, and uses less tokens.\nConclusion Reimplementing BPE from first principles clarified how every design choice — regex patterns, caches, merge order, or data structures — affects efficiency.\nSuperBPE extends this further, proving that smarter merge boundaries can deliver measurable gains in sample efficiency without compromising loss. It has it’s own drawbacks, particularly related to Evaluation (multiple choice answer is harder)\nI had a lot of fun covering all the details and running experiments. Stay tuned for more!\n",
+  "wordCount" : "3224",
   "inLanguage": "en",
-  "datePublished": "2025-10-05T00:00:00Z",
-  "dateModified": "2025-10-05T00:00:00Z",
+  "datePublished": "2025-10-07T00:00:00Z",
+  "dateModified": "2025-10-07T00:00:00Z",
   "author":{
     "@type": "Person",
     "name": "George Grigorev"
   },
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": "https://ggrigorev.me/posts/tokenizer-superbpe/"
+    "@id": "http://localhost:1313/posts/tokenizer-superbpe/"
   },
   "publisher": {
     "@type": "Organization",
     "name": "George Grigorev Blog",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://ggrigorev.me/favicon.ico"
+      "url": "http://localhost:1313/favicon.ico"
     }
   }
 }
@@ -184,7 +185,7 @@
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="https://ggrigorev.me/" accesskey="h" title="George Grigorev Blog (Alt + H)">George Grigorev Blog</a>
+            <a href="http://localhost:1313/" accesskey="h" title="George Grigorev Blog (Alt + H)">George Grigorev Blog</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -210,17 +211,17 @@
         </div>
         <ul id="menu">
             <li>
-                <a href="https://ggrigorev.me/" title="About">
+                <a href="http://localhost:1313/" title="About">
                     <span>About</span>
                 </a>
             </li>
             <li>
-                <a href="https://ggrigorev.me/publications/" title="Publications">
+                <a href="http://localhost:1313/publications/" title="Publications">
                     <span>Publications</span>
                 </a>
             </li>
             <li>
-                <a href="https://ggrigorev.me/posts/" title="Blog">
+                <a href="http://localhost:1313/posts/" title="Blog">
                     <span>Blog</span>
                 </a>
             </li>
@@ -233,15 +234,9 @@
   <header class="post-header">
     
     <h1 class="post-title entry-hint-parent">
-      Lessons from Building a Tokenizer from Scratch — and a Peek at SuperBPE
-      <span class="entry-hint" title="Draft">
-        <svg xmlns="http://www.w3.org/2000/svg" height="35" viewBox="0 -960 960 960" fill="currentColor">
-          <path
-            d="M160-410v-60h300v60H160Zm0-165v-60h470v60H160Zm0-165v-60h470v60H160Zm360 580v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q9 9 13 20t4 22q0 11-4.5 22.5T862.09-380L643-160H520Zm300-263-37-37 37 37ZM580-220h38l121-122-18-19-19-18-122 121v38Zm141-141-19-18 37 37-18-19Z" />
-        </svg>
-      </span>
+      Tokenization from first principles
     </h1>
-    <div class="post-meta"><span title='2025-10-05 00:00:00 +0000 UTC'>October 5, 2025</span>&nbsp;·&nbsp;<span>11 min</span>&nbsp;·&nbsp;<span>2254 words</span>&nbsp;·&nbsp;<span>George Grigorev</span>
+    <div class="post-meta"><span title='2025-10-07 00:00:00 +0000 UTC'>October 7, 2025</span>&nbsp;·&nbsp;<span>16 min</span>&nbsp;·&nbsp;<span>3224 words</span>&nbsp;·&nbsp;<span>George Grigorev</span>
 
 </div>
   </header> <div class="toc">
@@ -250,52 +245,34 @@
             <span class="details">Table of Contents</span>
         </summary>
 
-        <div class="inner"><ul>
-                <li>
-                    <a href="#intro" aria-label="Intro">Intro</a><ul>
-                        
-                <li>
-                    <a href="#not-all-bytes-are-created-equal" aria-label="Not all bytes are created equal">Not all bytes are created equal</a></li></ul>
-                </li>
-                <li>
-                    <a href="#pre-tokenization" aria-label="Pre-tokenization">Pre-tokenization</a><ul>
-                        
-                <li>
-                    <a href="#whats-sota-in-regex-patterns" aria-label="What’s SOTA in regex patterns?">What’s SOTA in regex patterns?</a></li>
-                <li>
-                    <a href="#wrapping-up" aria-label="Wrapping up">Wrapping up</a></li></ul>
-                </li>
-                <li>
-                    <a href="#other-details" aria-label="Other details">Other details</a><ul>
-                        
-                <li>
-                    <a href="#inference" aria-label="Inference">Inference</a></li></ul>
-                </li>
-                <li>
-                    <a href="#superbpe" aria-label="SuperBPE">SuperBPE</a><ul>
-                        
-                <li>
-                    <a href="#practical-aspects" aria-label="Practical aspects">Practical aspects</a></li></ul>
-                </li>
-                <li>
-                    <a href="#experiments" aria-label="Experiments">Experiments</a><ul>
-                        
-                <li>
-                    <a href="#llm-training" aria-label="LLM Training">LLM Training</a>
-                </li>
-            </ul>
-            </li>
-            </ul>
+        <div class="inner"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#intro">Intro</a></li>
+    <li><a href="#pre-tokenization">Pre-tokenization</a></li>
+    <li><a href="#practical-optimizations">Practical optimizations</a></li>
+    <li><a href="#superbpe">SuperBPE</a></li>
+    <li><a href="#experiments">Experiments</a></li>
+    <li><a href="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
         </div>
     </details>
 </div>
 
-  <div class="post-content"><p>In this blog post I will share my experience with building a BPE tokenizer from scratch, analyzing its quality, sample efficiency, and efficient implementation.</p>
+  <div class="post-content"><p>I&rsquo;ve now shared all code in my <a href="https://github.com/thepowerfuldeez/sample_efficient_gpt">repo</a></p>
+<p>In this blog post I will share my experience with building a BPE tokenizer from scratch, analyzing its quality, sample efficiency, and efficient implementation.</p>
 <p>This work started as part of the excellent CS336 “LLMs from Scratch” course, but then quickly developed into its own mini-project due to my curiosity to explore things further.</p>
-<p>I&rsquo;ve now shared all code in my <a href="https://github.com/thepowerfuldeez/sample_efficient_gpt">repo</a></p>
+<p><strong>Disclaimer</strong></p>
+<p>Algorithms presented in this blog post might not be optimal since I was never good at this, I am more a practical person that cares about efficiency as long as it improves quality. I would rather rewrite to Rust than make Python faster. This text is more like my journey into building tokenizers and achieving better sample efficiency than off-the-shelf solutions, since my end goal is ultimately achieving the best quality (or lowest loss) during LLM training.</p>
 <h3 id="intro">Intro<a hidden class="anchor" aria-hidden="true" href="#intro">#</a></h3>
 <p>Tokenization is needed to convert your text into numeric representation that is useful for training LLMs (and to essentially compress your data too, reducing sequence size)</p>
-<p>Let&rsquo;s discuss BPE tokenization algorithm:</p>
+<p>Let&rsquo;s discuss BPE tokenization algorithm during training:</p>
+<p>Each string character in UTF-8 encoding is represented as bytes (values from 0 to 255). We convert text to bytes. This is our initial set of tokens.</p>
+<p>At each step:
+1.	Count adjacent token pair frequencies.
+2.	Merge the most frequent pair into a new token ID (sequence becomes shorter).
+3.	Repeat until you hit your target vocab size.</p>
+<p>Larger token ID -&gt; later it was created from merge.</p>
 <figure>
     <img loading="lazy" src="/posts/tokenizer-superbpe/bpe_scheme.svg"
          alt="General scheme of BPE training"/> <figcaption>
@@ -303,12 +280,6 @@
         </figcaption>
 </figure>
 
-<p>Each string character in UTF-8 encoding is represented as bytes (values from 0 to 255). We convert text to bytes. This is our initial set of tokens.</p>
-<p>At each step:
-1.	Count adjacent token pair frequencies.
-2.	Merge the most frequent pair into a new token ID (sequence becomes shorter).
-3.	Repeat until you hit your target vocab size.</p>
-<p>Larger token ID -&gt; later it was created from merge.</p>
 <p>Byte-level BPE accepts bytes and returns sequence of ints (this can be saved as <code>*uint16*</code> if your vocab size is less than 65536), and no input is left un-tokenized (in contrast to earlier tokenizers which used <code>&lt;UNK&gt;</code> token for unknown tokens that don&rsquo;t fit into vocab)</p>
 <figure>
     <img loading="lazy" src="/posts/tokenizer-superbpe/bpe_train_step.svg"
@@ -332,17 +303,21 @@
 </li>
 </ul>
 <h3 id="pre-tokenization">Pre-tokenization<a hidden class="anchor" aria-hidden="true" href="#pre-tokenization">#</a></h3>
-<p>It&rsquo;s easy to show the naïve algorithm is $O(N^2)$</p>
+<p>It&rsquo;s easy to show the naïve algorithm is $O(N^2)$ (or more concretely $\Theta(VN)$ for $V$ being vocab size ($≈ N^2$ if $V\propto N$))</p>
 <p>For large files, even a single iteration becomes very computationally expensive (for 5 GB file, $N$ would be 4e9 and single step would take 100+ days on modern CPUs!)</p>
 <p>One optimization that we could use is to split whole training corpus into words (split by token ID 32 (&quot; &ldquo;) in this example – or, more generally, by any whitespace character) and group words together via hashmap.</p>
-<p>Then, knowing the count of each pre-token, true count for a pair of numbers becomes <code>frequency(pair within word) × pre-token count</code></p>
+<p>Then, knowing the count of each pre-token, true count for a pair of numbers becomes</p>
+<p><code>frequency(pair within word) × pre-token count</code></p>
 <p>It&rsquo;s even better to split not just by delimiter, but by a more complicated regex. For example, this is the regex used when training GPT-2:</p>
 <pre tabindex="0"><code>&#39;(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+
 </code></pre><p>It splits text &ldquo;Let&rsquo;s consider tokenization word-by-word&rdquo; like this:</p>
 <pre tabindex="0"><code>[&#39;Let&#39;, &#34;&#39;s&#34;, &#39; consider&#39;, &#39; tokenization&#39;, &#39; word&#39;, &#39;-&#39;, &#39;by&#39;, &#39;-&#39;, &#39;word&#39;]
 </code></pre><p>Notice we attach whitespace to the left.</p>
 <figure>
-    <img loading="lazy" src="/posts/tokenizer-superbpe/pretokenization.svg"/> 
+    <img loading="lazy" src="/posts/tokenizer-superbpe/pretokenization.svg"
+         alt="Schematic representation of pre-tokenization"/> <figcaption>
+            <p>Schematic representation of pre-tokenization</p>
+        </figcaption>
 </figure>
 
 <h4 id="whats-sota-in-regex-patterns">What’s SOTA in regex patterns?<a hidden class="anchor" aria-hidden="true" href="#whats-sota-in-regex-patterns">#</a></h4>
@@ -353,8 +328,8 @@
 <li><strong>Punctuation:</strong> keep <code>[^\s\p{L}\p{N}]+</code> to group operators/emoji/punct as learned units. (this part is advanced and requires a non-regex grapheme/emoji segmenter; regex alone won’t cleanly capture all emoji families.)</li>
 </ul>
 <p>In addition, when it comes to data preprocessing, there&rsquo;s also a notion of special tokens that we do not split into subwords, or into bytes, i.e., they are not involved in the training. One of the most popular special token examples - end of text. It is important to keep it as it is as we use it to split documents with each other, and tell the LLM where the sequence ends, so that at inference we would have an LLM that can actually stop its generation :)</p>
-<h4 id="wrapping-up">Wrapping up<a hidden class="anchor" aria-hidden="true" href="#wrapping-up">#</a></h4>
-<p>Generally, now whole training pipeline looks like Pretokenization + N iterations of merges.</p>
+<h4 id="training-pipeline">Training pipeline<a hidden class="anchor" aria-hidden="true" href="#training-pipeline">#</a></h4>
+<p>Generally, now whole training pipeline looks like Pretokenization + N iterations of merges. We would explore optimization for one merge iteration step below.</p>
 <p>Pretokenization was rewritten in Rust (via PyO3). The Rust code splits text with a regex and counts pre-tokens directly, avoiding round-tripping large Python string lists (pickle/marshalling). I used simdutf, ahash for efficient decoding and counting.</p>
 <p>Single-process benchmark (1.5M lines):</p>
 <ul>
@@ -364,7 +339,7 @@
 <li>Iter 2 (Rust split + count): 21.2 s total</li>
 </ul>
 <p><a href="https://github.com/thepowerfuldeez/sample_efficient_gpt/blob/main/sample_efficient_gpt/fastsplit/src/lib.rs">Code</a></p>
-<h3 id="other-details">Other details<a hidden class="anchor" aria-hidden="true" href="#other-details">#</a></h3>
+<h3 id="practical-optimizations">Practical optimizations<a hidden class="anchor" aria-hidden="true" href="#practical-optimizations">#</a></h3>
 <p>There are still a couple of questions related to merging process:</p>
 <ol>
 <li>How to detect the most frequent pair inside a pre-token efficiently? Do we need some specific data structure?</li>
@@ -375,11 +350,7 @@
 <p>First of all, for training our main goal is to be able to find the most frequent pair very quickly. Unfortunately there&rsquo;s not much we could do to merge faster during training. We still need to linearly scan the sequence.</p>
 <p>Let&rsquo;s cache <code>pre_token_counts</code>, <code>updated_pre_tokens</code>, <code>all_pair_counts</code>, <code>pair_to_pre_tokens</code>.</p>
 <p><code>all_pair_counts</code> is the most important map. We take the top-1 count each step to get the max pair.</p>
-<p>Two observations:</p>
-<figure>
-    <img loading="lazy" src="/posts/tokenizer-superbpe/all_pair_counts_step.svg"/> 
-</figure>
-
+<p><strong>Two observations:</strong></p>
 <ol>
 <li>After each update, we don&rsquo;t need to re-compute <code>all_pair_counts</code>. We know that most pairs are untouched, so we keep only pre-tokens that have been updated (updated_pre_tokens). Moreover, we know that frequencies of pairs change in deterministic order. So, if we had a sequence (1, 2, 3, 4) and merged (2, 3) -&gt; 99:
 <ul>
@@ -392,15 +363,72 @@
 <p>Including these modifications lets us cache <code>all_pair_counts</code> and update it after each iteration instead of re-computing.</p>
 <blockquote>
 <p>This change reduced my total training time 7x.</p></blockquote>
+<figure>
+    <img loading="lazy" src="/posts/tokenizer-superbpe/all_pair_counts_step.svg"/> 
+</figure>
+
 <ol start="2">
 <li>We know there are situations where top-k pairs from <code>all_pair_counts</code> remain the same (so top-2 becomes top-1 in the next step, and if we know that in advance, we could retrieve next max pair in O(1)). Intuitively, this can be if our updated frequencies in <code>all_pair_counts</code> do not touch any of the top-k keys, or at least do not drive them too high. This is a pretty weak assumption but it helps to reduce the search space and avoid resorting keys of <code>all_pair_counts</code> every iteration.</li>
 </ol>
+<ul>
+<li>Cache the top 10% from the previous sorted list.</li>
+<li>Re-sort only pairs involving keys updated in this iteration.</li>
+<li>Merge the cached top-10% with the newly sorted updated pairs and take the top-K.</li>
+</ul>
+<blockquote>
+<p>This reduces training time by a factor of 3x, obtaining 20x improvement over baseline.</p></blockquote>
 <p>A natural data structure for <code>all_pair_counts</code> is a max-heap. Updates are $O(log(N))$, and retrieving the max is $O(1)$. When I tried it, I noticed that we add/remove keys too frequently, so that the overhead of max-heap becomes too high. I keep it as a dict and try to sort elements when needed.</p>
-<p>So in practice I have heuristics to check if top-k keys in all pairs counts are not updated, so I reduce total amounts of sorting to find the most frequent pair. I suspect we could go even further and employ probabilistic algorithms.</p>
-<h4 id="inference">Inference<a hidden class="anchor" aria-hidden="true" href="#inference">#</a></h4>
-<p>Now we don&rsquo;t need to find the most frequent token anymore, and all of our merges are static. We convert text to bytes and apply all merges in the same order as we obtained them during training. What&rsquo;s the best data structure to store and apply the merges to our sequence?</p>
-<p>I ended up using doubly linked list for the sequence of tokens for each word (Note that in this case we don’t strictly need pre-tokens; we can process the whole sequence until we’ve applied all merges)</p>
-<p>We start with a chain of tokens, each with pointers to the next and previous tokens. We do a linear scan until we find the corresponding merge, replace the first element with the merged token ID, unlink second element, re-link updated token to the next.next. Finally, LeetCode is useful!!!</p>
+<p>I wonder how these 2 optimizations change algorithmic complexity?</p>
+<p>$P$: # unique adjacent pairs in the whole corpus ($≤ N$).</p>
+<p>$\Delta_t$: # distinct pair keys whose counts actually change at iteration t (typically $\Delta_t \ll N$)</p>
+<p>If we store counts in a dict and only touch changed keys, per iter update cost is $\Theta(\Delta_t)$</p>
+<p>Over all merges, each token position can only be rewritten a constant number of times, so $\sum_t O_t = \mathcal O(N)$ and typically $\sum_t \Delta_t = \tilde{\mathcal O}(N)$</p>
+<p>Total (amortized):
+$\boxed{\Theta\big(N + M\bar L + P + \sum_t \Delta_t\big)}$ -&gt; $~O(N)$</p>
+<p>where $M$ is total numbero of pre-tokens and $\bar L$ is mean length of a pre-token (in bytes)</p>
+<ul>
+<li>Sorting heuristic:</li>
+</ul>
+<p>If we cache the top 10% from the previous sorted list, re-sort only pairs involving keys updated in this iteration</p>
+<p>Selecting the next max now costs about $\Theta(\Delta_t \log \Delta_t)$ per iter (to re-rank only changed keys), plus an occasional refresh of the cache ($\Theta(P \log P)$ every $R$ rounds) instead of $\sum_t \Delta_t$.</p>
+<p>In practice, this cut sorting time by ~3× with no observed quality loss in my runs.</p>
+<p>Note: This is an approximation—there’s no strict guarantee that the true global top item won’t fall outside “updated pairs + cached top-10%”.</p>
+<p>I suspect we could go even further and employ probabilistic algorithms, Bucketed counts and Compact inverted index.</p>
+<h4 id="final-training-loop-pseudocode">Final training loop pseudocode<a hidden class="anchor" aria-hidden="true" href="#final-training-loop-pseudocode">#</a></h4>
+<pre tabindex="0"><code>pre_token_counts = pre_tokenize(filepath)
+for n_iters iterations:
+	# update self.pre_token_byte_counts in-place, while caching what&#39;s required
+	self.new_id = self.vocab_size
+    iter_merge_cached(self.pre_token_byte_counts)
+	left, right = self.convert(self.new_id)
+	self.vocab[self.new_id] = left+right
+	self.merges.append(updated_key)
+</code></pre><h4 id="inference">Inference<a hidden class="anchor" aria-hidden="true" href="#inference">#</a></h4>
+<p>During inference (encoding), merges are fixed and we don&rsquo;t need to find the most frequent token anymore. The task is to apply rules greedily and efficiently. What&rsquo;s the best data structure to store and apply the merges to our sequence?</p>
+<p>I ended up using doubly linked list for the sequence of tokens for each word, so algorithm becomes:</p>
+<ul>
+<li>
+<ol>
+<li>Split some batch of text and convert to bytes</li>
+</ol>
+</li>
+<li>
+<ol start="2">
+<li>Encode each pre-token as a doubly-linked list of token ids.</li>
+</ol>
+</li>
+<li>
+<ol start="3">
+<li>Scan for the highest-priority merge that matches; when you merge (x,y)→z, replace x with z and unlink y.</li>
+</ol>
+</li>
+</ul>
+<p>Finally, LeetCode is useful!!!</p>
+<p>Additionally, since we don&rsquo;t group pre-tokens into counts and instead stream tokenized outputs we lose speed. I applied LRU cache to fix that. We would cache results of input bytes so we don&rsquo;t need to reapply merges again if we see the same pre-token again.</p>
+<figure>
+    <img loading="lazy" src="/posts/tokenizer-superbpe/bpe_inference.svg"/> 
+</figure>
+
 <h3 id="superbpe">SuperBPE<a hidden class="anchor" aria-hidden="true" href="#superbpe">#</a></h3>
 <p>After we trained tokenizer and spent so much time implementing it from scratch instead of just using huggingface tokenizers, we need to justify all of that time and train something more useful. Welcome SuperBPE.</p>
 <p>SuperBPE is a fairly recent work, and in my opinion underexplored. When I sat implementing BPE from scratch I couldn&rsquo;t get rid of an idea of this pre-tokenization. Why restrict ourselves to single words? Doing pre-tokens seems like a useful optimization hack, but language might not always work in words, but rather concepts? I could easily imagine cases where frequencies of multi-word spans can exceed those of adjacent byte-pairs. Language is redundant and contains phrases like &ldquo;such as&rdquo;, &ldquo;to be considered&rdquo;, &ldquo;for example&rdquo; which is logical to represent as a single token. SuperBPE solves exactly that. Now tokens can represent multiple words at once.</p>
@@ -415,30 +443,66 @@
 
 <p>Final algorithm is still like 20x slower than my BPE implementation, but hopefully we don&rsquo;t need to start from the beginning, as we could enable SuperBPE only at the last 20% of the training (this works better in practice, since we want for the BPE to learn general concepts inside words first (inter-word n-gram dependencies), and then lift this restriction)</p>
 <h4 id="practical-aspects">Practical aspects<a hidden class="anchor" aria-hidden="true" href="#practical-aspects">#</a></h4>
-<p>Okay, imagine you now have your implementation of tokenizer that is so flexible it allows your custom way of training.
-But
-a) no one cares if it&rsquo;s not supported in tokenizers
-b) it&rsquo;s really slow (it will require full rust rewrite and still for very large datasets will be slow)</p>
-<p>So converting to tokenizers format to the rescue, turns out it&rsquo;s not that hard!</p>
-<p>After inspecting some tokenizer vocabs (it&rsquo;s stored inside tokenizer.json) i noticed a few things:
-a) it&rsquo;s json, but my vocab is in bytes.
-I tried converting bytes to str, and that&rsquo;s the whole point of Byte Level BPE - you cannot convert it to UTF-8 easily 😄
-HF uses some interesting choice of mapping bytes to some obscure UTF-8 characters. Whitespace becomes Ġ , \n becomes</p>
+<p>Okay, imagine you now have implemented a tokenizer that is so flexible it allows your custom way of training.</p>
+<p>But</p>
+<ul>
+<li>
+<p>a) no one cares if it&rsquo;s not supported in <em>tokenizers</em></p>
+</li>
+<li>
+<p>b) it&rsquo;s still slow (it will require full Rust rewrite and perhaps for very large datasets will be slow)</p>
+</li>
+</ul>
+<p>So converting to <em>tokenizers</em> format to the rescue, turns out it&rsquo;s not that hard!</p>
+<p>After inspecting some open-source tokenizer vocabs (it&rsquo;s stored inside <code>tokenizer.json</code> file) i noticed a few things:</p>
+<ul>
+<li>a) it&rsquo;s serialized as json, but my vocab is stored in bytes (pickle).</li>
+</ul>
+<p>I tried converting bytes to str, and that&rsquo;s the whole point of Byte Level BPE - you cannot convert it to UTF-8 easily 😄</p>
+<ul>
+<li>b) HF uses some interesting choice of mapping bytes to some obscure UTF-8 characters. Whitespace becomes <code>Ġ</code> , <code>\n</code> becomes <code>Ċ</code></li>
+</ul>
+<p>Turns out this was one of the quirks of Hugging Face’s tokenizers inherited from the original GPT-2 implementation by OpenAI.</p>
+<p>In the GPT-2 tokenizer, every byte (0–255) is mapped to a unique, printable Unicode character so that text can be handled as normal strings in Python without losing byte information. They are chosen so that they are not used in typical English text.</p>
+<blockquote>
+<p>TLDR; <code>&quot;Ġhello&quot;</code> represents <code>&quot; hello&quot;</code>.</p></blockquote>
+<p>This convention is purely aesthetic but became de-facto standard since GPT-2.</p>
+<p>HF transformers have some example scripts to adapt pickle based vocab and merges to JSON, so it&rsquo;s not hard to write your own <a href="https://github.com/thepowerfuldeez/sample_efficient_gpt/blob/main/sample_efficient_gpt/scripts/convert_tokenizer_to_hf.py">script</a>.</p>
 <h3 id="experiments">Experiments<a hidden class="anchor" aria-hidden="true" href="#experiments">#</a></h3>
 <p>The most interesting part.</p>
-<p>I first trained my BPE implementation on good quality data. (About 500M tokens or 5 GB text file). I used an improved regex template with digit grouping and better splitting.</p>
-<p>Finished training in 38,562.8 s.
-Average iteration time: 0.764 s.
-Total sort time was 17,350.43 s.</p>
+<p>I first trained my BPE implementation on good quality data from DCLM dataset. (About 500M tokens or 5 GB text file). I used an improved regex template with digit grouping and better splitting. My CPU is Ryzen 5</p>
+<ul>
+<li>Finished training in 38,562.8 s.</li>
+<li>Average iteration time: 0.764 s.</li>
+<li>Total sort time was 17,350.43 s.</li>
+</ul>
 <p>It achieved compression ratio: 4.39 bytes per token</p>
+<hr>
 <p>Tokenization speed on a full 12 GB file: 1193.2s -&gt; 10.3 MB/s</p>
 <p>SuperBPE is trained by resuming the basic BPE run from 26,000th iteration (roughly 80% of training).</p>
-<p>Finished training in 53 hours
-Sort time is 49% of it</p>
+<ul>
+<li>
+<p>Finished training in 53 hours</p>
+</li>
+<li>
+<p>Sort time is 49% of it</p>
+</li>
+</ul>
 <p>!!! It&rsquo;s 20x slower, let&rsquo;s see if it&rsquo;s worth it</p>
+<p>We could inspect vocab of SuperBPE to see that it&rsquo;s indeed merged some whitespaces together into a single token or some phrases or code constructions. (screenshot is from the other experiment on slightly larger data and larger vocab)</p>
+<table>
+  <thead>
+      <tr>
+          <th style="text-align: center"><img loading="lazy" src="/posts/tokenizer-superbpe/superbpe_example1.jpeg"></th>
+          <th style="text-align: center"><img loading="lazy" src="/posts/tokenizer-superbpe/superbpe_example2.jpeg"></th>
+      </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+<h4 id="llm-training">LLM Training<a hidden class="anchor" aria-hidden="true" href="#llm-training">#</a></h4>
 <p>I have used my baseline implementation of LLM training with hand-written Triton FlashAttention-2 and some tweaks.</p>
 <blockquote class="twitter-tweet"><p lang="en" dir="ltr">Just trained a 70M-param LLM to &lt;20 perplexity on DCLM in 5 hours – on a single consumer GPU.<br><br>All my convergence + sample-efficiency tricks are stacking beautifully.<br><br>I now have separate repo with my research related to sample efficient GPT training, link in reply.</p>&mdash; George Grigorev (@iamgrigorev) <a href="https://twitter.com/iamgrigorev/status/1974794103021044001?ref_src=twsrc%5Etfw">October 5, 2025</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-<h4 id="llm-training">LLM Training<a hidden class="anchor" aria-hidden="true" href="#llm-training">#</a></h4>
 <p>Two tokenizers trained with 32700 vocab size: &ldquo;baseline BPE tokenizer&rdquo; and &ldquo;SuperBPE&rdquo; tokenizer</p>
 <p>Dataset used: DCLM (edu subset, filtered with score &gt; 2.75)
 Token count: ~1.2B (24k iterations, 512 context length, 96 batch size, single GPU – RTX5090)
@@ -475,15 +539,75 @@ What&rsquo;s suspicious is that val loss is exactly 25% higher (3.19 -&gt; 3.98)
 </figure>
 
 <p>Considering that during generation your model should now produce 20% less tokens, validation loss is the same as the baseline, and lower norms, we could call SuperBPE tokens bring more regularization, and consider this method a free lunch!</p>
+<p>I ran some generations using both models, using <code>temperature=0.8</code> and <code>top_p=0.8</code> on prompts taken from test set.</p>
+<table>
+  <thead>
+      <tr>
+          <th>#</th>
+          <th>Tokenizer</th>
+          <th>N tokens</th>
+          <th>Generated Text</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>1</td>
+          <td><strong>BPE</strong></td>
+          <td>41</td>
+          <td>Sacramento, California<br><br>Sacramento is the capital of the state of California, 13th largest city in the United States. It is the largest city in the state of California.</td>
+      </tr>
+      <tr>
+          <td>2</td>
+          <td><strong>SuperBPE</strong></td>
+          <td>75</td>
+          <td>Sacramento, California<br><br>Sacramento is the capital of the state of California, 29 miles (50 km) southwest of San Francisco. Sacramento is situated in the southern part of the state, in the Sierras del Norte mountain range, between Sacramento and the Sierra Nevada mountain range. The state has a population of 14,069,403 (July 2010 est.).</td>
+      </tr>
+      <tr>
+          <td>3</td>
+          <td><strong>BPE</strong></td>
+          <td>139</td>
+          <td>What is Clostridium Botulinum?<br>Clostridium Botulinum is a gram negative, rod-shaped bacterium that is most often found in the digestive tract of animals and humans. Clostridium Botulinum is also found in the human gut.<br><br>What is the treatment for Clostridium Botulinum?<br>The most common treatment for Clostridium Botulinum is a dose of Clostridium Botulinum injection. This is done under the supervision of a doctor.<br><br>What is the prognosis for Clostridium Botulinum?<br>Clostridium Botulinum is a life-threatening infection that can be fatal.</td>
+      </tr>
+      <tr>
+          <td>4</td>
+          <td><strong>SuperBPE</strong></td>
+          <td>93</td>
+          <td>What is Clostridium Botulinum?<br>The Clostridium Botulinum is a Gram-positive, motile, spore-forming, anaerobic bacterium. It is able to live on various substrates, including dead plant tissue, organic matter, dead animals, and living organisms. It is a zoonotic organism which lives in soil and under aquatic plants. It usually occurs on soil surfaces or on surfaces that are exposed to direct sunlight, moisture, chemicals, or microbial activity.</td>
+      </tr>
+      <tr>
+          <td>5</td>
+          <td><strong>BPE</strong></td>
+          <td>17</td>
+          <td>Old age related health problems such as heart disease, diabetes, and high blood pressure.</td>
+      </tr>
+      <tr>
+          <td>6</td>
+          <td><strong>SuperBPE</strong></td>
+          <td>35</td>
+          <td>Old age related health problems are more common in older adults than younger people. In addition, older adults with diabetes are also more likely to have higher blood pressure, stroke, heart disease, kidney disease, and certain types of cancer.</td>
+      </tr>
+  </tbody>
+</table>
+<p>BPE mistakes:</p>
+<p>#1 is factually wrong (not 13th largest, not largest in CA)</p>
+<p>#3 is factually wrong (not gram negative, but gram positive)</p>
+<p>SuperBPE mistakes:</p>
+<p>#2 - Geography wrong (it’s northeast, not southwest)</p>
+<p>SuperBPE is more stable, coherent and factual, and uses less tokens.</p>
+<h3 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h3>
+<p>Reimplementing BPE from first principles clarified how every design choice — regex patterns, caches, merge order, or data structures — affects efficiency.</p>
+<p>SuperBPE extends this further, proving that smarter merge boundaries can deliver measurable gains in sample efficiency without compromising loss. It has it&rsquo;s own drawbacks, particularly related to Evaluation (multiple choice answer is harder)</p>
+<p>I had a lot of fun covering all the details and running experiments. Stay tuned for more!</p>
 
 
   </div>
 
   <footer class="post-footer">
     <ul class="post-tags">
-      <li><a href="https://ggrigorev.me/tags/tokenization/">Tokenization</a></li>
-      <li><a href="https://ggrigorev.me/tags/bpe/">Bpe</a></li>
-      <li><a href="https://ggrigorev.me/tags/llm/">Llm</a></li>
+      <li><a href="http://localhost:1313/tags/tokenization/">Tokenization</a></li>
+      <li><a href="http://localhost:1313/tags/bpe/">Bpe</a></li>
+      <li><a href="http://localhost:1313/tags/llm/">Llm</a></li>
+      <li><a href="http://localhost:1313/tags/superbpe/">Superbpe</a></li>
     </ul>
 
   </footer>
@@ -491,7 +615,7 @@ What&rsquo;s suspicious is that val loss is exactly 25% higher (3.19 -&gt; 3.98)
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="https://ggrigorev.me/">George Grigorev Blog</a></span> · 
+        <span>&copy; 2025 <a href="http://localhost:1313/">George Grigorev Blog</a></span> · 
 
     <span>
         Powered by

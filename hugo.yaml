@@ -28,6 +28,7 @@ params:
   disableHLJS: false
   ShowToc: true
   TocOpen: true
+  UseHugoToc: true
   math:
     enable: true
     engine: mathjax
@@ -93,8 +94,8 @@ markup:
     extensions:
       footnote: true
   tableOfContents:
-    startLevel: 2
-    endLevel: 2
+    startLevel: 3
+    endLevel: 3
 
 caches:
   images:
