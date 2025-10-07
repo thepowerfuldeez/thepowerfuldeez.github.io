@@ -6,12 +6,12 @@
     <description>Recent content in Bpe on George Grigorev Blog</description>
     <generator>Hugo -- 0.149.1</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 05 Oct 2025 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 07 Oct 2025 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://ggrigorev.me/tags/bpe/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Tokenization from first principles</title>
       <link>https://ggrigorev.me/posts/tokenizer-superbpe/</link>
-      <pubDate>Sun, 05 Oct 2025 00:00:00 +0000</pubDate>
+      <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
       <guid>https://ggrigorev.me/posts/tokenizer-superbpe/</guid>
       <description>Byte-level BPE from first principles: what matters for speed and quality, how to implement it cleanly, and why a SuperBPE variant can lift sample efficiency.</description>
     </item>
