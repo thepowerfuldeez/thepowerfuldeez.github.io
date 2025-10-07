@@ -483,6 +483,17 @@ main.main {
   }
 }
 
+body.dark .post-content img[src$=".svg"],
+body.dark .home-info img[src$=".svg"] {
+  filter: invert(0.92) hue-rotate(180deg) saturate(1.15);
+  transition: filter 0.3s ease;
+}
+
+body.dark .post-content img[src$=".svg"]:hover,
+body.dark .home-info img[src$=".svg"]:hover {
+  filter: invert(0.92) hue-rotate(180deg) saturate(1.25);
+}
+
 @media (max-width: 640px) {
   .single .post-content pre code {
     white-space: pre-wrap;
