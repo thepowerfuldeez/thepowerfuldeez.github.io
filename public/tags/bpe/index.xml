@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Bpe on George Grigorev Blog</title>
-    <link>https://ggrigorev.me/tags/bpe/</link>
+    <link>http://localhost:1313/tags/bpe/</link>
     <description>Recent content in Bpe on George Grigorev Blog</description>
     <generator>Hugo -- 0.149.1</generator>
     <language>en-us</language>
     <lastBuildDate>Tue, 07 Oct 2025 00:00:00 +0000</lastBuildDate>
-    <atom:link href="https://ggrigorev.me/tags/bpe/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://localhost:1313/tags/bpe/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Tokenization from first principles</title>
-      <link>https://ggrigorev.me/posts/tokenizer-superbpe/</link>
+      <link>http://localhost:1313/posts/tokenizer-superbpe/</link>
       <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
-      <guid>https://ggrigorev.me/posts/tokenizer-superbpe/</guid>
+      <guid>http://localhost:1313/posts/tokenizer-superbpe/</guid>
       <description>Byte-level BPE from first principles: what matters for speed and quality, how to implement it cleanly, and why a SuperBPE variant can lift sample efficiency.</description>
     </item>
   </channel>

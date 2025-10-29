@@ -2,33 +2,48 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://ggrigorev.me/tags/bpe/</loc>
+    <loc>http://localhost:1313/tags/bpe/</loc>
     <lastmod>2025-10-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://ggrigorev.me/tags/llm/</loc>
+    <loc>http://localhost:1313/tags/data-parallelism/</loc>
     <lastmod>2025-10-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://ggrigorev.me/posts/</loc>
+    <loc>http://localhost:1313/tags/ddp/</loc>
     <lastmod>2025-10-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://ggrigorev.me/tags/superbpe/</loc>
+    <loc>http://localhost:1313/tags/fsdp/</loc>
     <lastmod>2025-10-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://ggrigorev.me/tags/</loc>
+    <loc>http://localhost:1313/posts/introduction-to-parallelism/</loc>
     <lastmod>2025-10-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://ggrigorev.me/tags/tokenization/</loc>
+    <loc>http://localhost:1313/tags/llm/</loc>
     <lastmod>2025-10-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://ggrigorev.me/posts/tokenizer-superbpe/</loc>
+    <loc>http://localhost:1313/posts/</loc>
     <lastmod>2025-10-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://ggrigorev.me/</loc>
+    <loc>http://localhost:1313/tags/superbpe/</loc>
+    <lastmod>2025-10-07T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/</loc>
+    <lastmod>2025-10-07T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/tensor-parallel/</loc>
+    <lastmod>2025-10-07T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/tokenization/</loc>
+    <lastmod>2025-10-07T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/tokenizer-superbpe/</loc>
+    <lastmod>2025-10-07T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/</loc>
     <lastmod>2025-09-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://ggrigorev.me/publications/</loc>
+    <loc>http://localhost:1313/publications/</loc>
     <lastmod>2025-09-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://ggrigorev.me/categories/</loc>
+    <loc>http://localhost:1313/categories/</loc>
   </url>
 </urlset>

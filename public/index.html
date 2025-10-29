@@ -2,7 +2,7 @@
 <html lang="en" dir="auto">
 
 <head>
-	<meta name="generator" content="Hugo 0.149.1"><meta charset="utf-8">
+	<meta name="generator" content="Hugo 0.149.1"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
@@ -10,17 +10,17 @@
 
 <meta name="description" content="Previously at Together AI running distributed training on hundreds of GPUs and building eval pipelines. Earlier at Snap shipping multimodal LLMs to 100M&#43; people, diffusion pre-training, and AI research &amp; product delivery across text, image, and speech.">
 <meta name="author" content="George Grigorev">
-<link rel="canonical" href="https://ggrigorev.me/">
+<link rel="canonical" href="http://localhost:1313/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.a090830a421002426baafbd314e38f149d77b4c48a12ee9312700d770b27fb26.css" integrity="sha256-oJCDCkIQAkJrqvvTFOOPFJ13tMSKEu6TEnANdwsn&#43;yY=" rel="preload stylesheet" as="style">
-<link rel="icon" href="https://ggrigorev.me/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="https://ggrigorev.me/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="https://ggrigorev.me/favicon-32x32.png">
-<link rel="apple-touch-icon" href="https://ggrigorev.me/apple-touch-icon.png">
-<link rel="mask-icon" href="https://ggrigorev.me/safari-pinned-tab.svg">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" type="application/rss+xml" href="https://ggrigorev.me/index.xml" title="rss">
-<link rel="alternate" hreflang="en" href="https://ggrigorev.me/">
+<link rel="alternate" type="application/rss+xml" href="http://localhost:1313/index.xml" title="rss">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/">
 <noscript>
     <style>
         #theme-toggle,
@@ -99,7 +99,7 @@
           gtag('js', new Date());
           gtag('config', 'G-F5HXWCK8S4');
         }
-      </script><meta property="og:url" content="https://ggrigorev.me/">
+      </script><meta property="og:url" content="http://localhost:1313/">
   <meta property="og:site_name" content="George Grigorev Blog">
   <meta property="og:title" content="About">
   <meta property="og:description" content="Previously at Together AI running distributed training on hundreds of GPUs and building eval pipelines. Earlier at Snap shipping multimodal LLMs to 100M&#43; people, diffusion pre-training, and AI research &amp; product delivery across text, image, and speech.">
@@ -114,9 +114,9 @@
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "George Grigorev Blog",
-  "url": "https://ggrigorev.me/",
+  "url": "http://localhost:1313/",
   "description": "Previously at Together AI running distributed training on hundreds of GPUs and building eval pipelines. Earlier at Snap shipping multimodal LLMs to 100M+ people, diffusion …",
-  "logo": "https://ggrigorev.me/favicon.ico",
+  "logo": "http://localhost:1313/favicon.ico",
   "sameAs": [
       "https://github.com/thepowerfuldeez", "https://twitter.com/iamgrigorev", "https://www.linkedin.com/in/george-grigorev/"
   ]
@@ -252,6 +252,20 @@ LLM-as-a-judge evaluation pipelines (Flyte-orchestrated).</li>
 
 <article class="post-entry"> 
   <header class="entry-header">
+    <h2 class="entry-hint-parent">Introduction to parallelism in PyTorch
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>Training large models inevitably requires a solid understanding of parallelism techniques. In this post, I’ll give a practical, in-depth overview of the most common approaches — DDP, FSDP, and TP — and how they’re actually used in real PyTorch training setups.
+This article was inspired by the excellent “How to Scale Your Model” blog series. While that series is clear and insightful, I felt it was missing some hands-on perspective and real-world lessons from someone who has trained models in the wild.
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2025-10-07 00:00:00 +0000 UTC'>October 7, 2025</span>&nbsp;·&nbsp;<span>19 min</span>&nbsp;·&nbsp;<span>4037 words</span>&nbsp;·&nbsp;<span>George Grigorev</span></footer>
+  <a class="entry-link" aria-label="post link to Introduction to parallelism in PyTorch" href="http://localhost:1313/posts/introduction-to-parallelism/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
     <h2 class="entry-hint-parent">Tokenization from first principles
     </h2>
   </header>
@@ -259,12 +273,12 @@ LLM-as-a-judge evaluation pipelines (Flyte-orchestrated).</li>
     <p>Byte-level BPE from first principles: what matters for speed and quality, how to implement it cleanly, and why a SuperBPE variant can lift sample efficiency.</p>
   </div>
   <footer class="entry-footer"><span title='2025-10-07 00:00:00 +0000 UTC'>October 7, 2025</span>&nbsp;·&nbsp;<span>16 min</span>&nbsp;·&nbsp;<span>3224 words</span>&nbsp;·&nbsp;<span>George Grigorev</span></footer>
-  <a class="entry-link" aria-label="post link to Tokenization from first principles" href="https://ggrigorev.me/posts/tokenizer-superbpe/"></a>
+  <a class="entry-link" aria-label="post link to Tokenization from first principles" href="http://localhost:1313/posts/tokenizer-superbpe/"></a>
 </article>
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="https://ggrigorev.me/">George Grigorev Blog</a></span> · 
+        <span>&copy; 2025 <a href="http://localhost:1313/">George Grigorev Blog</a></span> · 
 
     <span>
         Powered by

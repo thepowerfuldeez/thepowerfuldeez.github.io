@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Introduction to parallelism in PyTorch | George Grigorev Blog</title>
+<meta name="keywords" content="ddp, data parallelism, fsdp, tensor parallel">
+<meta name="description" content="Training large models inevitably requires a solid understanding of parallelism techniques. In this post, I&rsquo;ll give a practical, in-depth overview of the most common approaches — DDP, FSDP, and TP — and how they&rsquo;re actually used in real PyTorch training setups.
+This article was inspired by the excellent “How to Scale Your Model” blog series. While that series is clear and insightful, I felt it was missing some hands-on perspective and real-world lessons from someone who has trained models in the wild.">
+<meta name="author" content="George Grigorev">
+<link rel="canonical" href="http://localhost:1313/posts/introduction-to-parallelism/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.a090830a421002426baafbd314e38f149d77b4c48a12ee9312700d770b27fb26.css" integrity="sha256-oJCDCkIQAkJrqvvTFOOPFJ13tMSKEu6TEnANdwsn&#43;yY=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/introduction-to-parallelism/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="/css/custom.css"><script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [ ['$', '$'], ['\\(', '\\)'] ],
+        displayMath: [ ['$$', '$$'], ['\\[', '\\]'] ],
+        processEscapes: true,
+        tags: 'ams',
+        packages: { '[+]': ['noerrors'] },
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+      },
+      loader: { load: ['[tex]/noerrors'] },
+    };
+  </script>
+  <script
+    async
+    id="MathJax-script"
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+  ></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', function () {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise();
+      }
+    });
+  </script>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-F5HXWCK8S4"></script>
+      <script>
+        var doNotTrack = false;
+        if ( false ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-F5HXWCK8S4');
+        }
+      </script><meta property="og:url" content="http://localhost:1313/posts/introduction-to-parallelism/">
+  <meta property="og:site_name" content="George Grigorev Blog">
+  <meta property="og:title" content="Introduction to parallelism in PyTorch">
+  <meta property="og:description" content="Training large models inevitably requires a solid understanding of parallelism techniques. In this post, I’ll give a practical, in-depth overview of the most common approaches — DDP, FSDP, and TP — and how they’re actually used in real PyTorch training setups.
+This article was inspired by the excellent “How to Scale Your Model” blog series. While that series is clear and insightful, I felt it was missing some hands-on perspective and real-world lessons from someone who has trained models in the wild.">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-10-07T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-10-07T00:00:00+00:00">
+    <meta property="article:tag" content="Ddp">
+    <meta property="article:tag" content="Data Parallelism">
+    <meta property="article:tag" content="Fsdp">
+    <meta property="article:tag" content="Tensor Parallel">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Introduction to parallelism in PyTorch">
+<meta name="twitter:description" content="Training large models inevitably requires a solid understanding of parallelism techniques. In this post, I&rsquo;ll give a practical, in-depth overview of the most common approaches — DDP, FSDP, and TP — and how they&rsquo;re actually used in real PyTorch training setups.
+This article was inspired by the excellent “How to Scale Your Model” blog series. While that series is clear and insightful, I felt it was missing some hands-on perspective and real-world lessons from someone who has trained models in the wild.">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://localhost:1313/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Introduction to parallelism in PyTorch",
+      "item": "http://localhost:1313/posts/introduction-to-parallelism/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Introduction to parallelism in PyTorch",
+  "name": "Introduction to parallelism in PyTorch",
+  "description": "Training large models inevitably requires a solid understanding of parallelism techniques. In this post, I\u0026rsquo;ll give a practical, in-depth overview of the most common approaches — DDP, FSDP, and TP — and how they\u0026rsquo;re actually used in real PyTorch training setups.\nThis article was inspired by the excellent “How to Scale Your Model” blog series. While that series is clear and insightful, I felt it was missing some hands-on perspective and real-world lessons from someone who has trained models in the wild.\n",
+  "keywords": [
+    "ddp", "data parallelism", "fsdp", "tensor parallel"
+  ],
+  "articleBody": "Training large models inevitably requires a solid understanding of parallelism techniques. In this post, I’ll give a practical, in-depth overview of the most common approaches — DDP, FSDP, and TP — and how they’re actually used in real PyTorch training setups.\nThis article was inspired by the excellent “How to Scale Your Model” blog series. While that series is clear and insightful, I felt it was missing some hands-on perspective and real-world lessons from someone who has trained models in the wild.\nWhy Parallelism If you have a single GPU and it’s enough for your needs, you don’t need to bother. But for most serious workloads, that’s not the case. With care, you can often get near‑linear training speedups when using more accelerators. Parallelism is a fundamental topic in ML interviews and in any Research Engineer knowledge.\nUnderstanding fundamentals will help you to develop better algorithms or take maximum of your accelerators.\nNote: in all runs in this post I torch.compile the model, so I’m not comparing against a non‑compiled version (I believe everyone should do torch.compile by default as a baseline now – be careful about graph breaks though!).\nDDP The simplest form of parallelism is Distributed Data Parallel (DDP).\nBefore we dive in, let’s briefly talk about collective communications.\ntorch.distributed handles collective operations using either the Gloo (CPU) or NCCL (GPU) backend.\nYou must specify the WORLD_SIZE, RANK, and MASTER_ADDR environment variables and run the same code on each device or simply run your script with torchrun command:\nuv run torchrun --nproc_per_node WORLD script.py Here, we use only 1 node and set WORLD devices at each node (number of gpus)\nInclude dist.init_process_group(\"nccl\") in script.py to run distributed code.\n(you can also use backend gloo instead and use cpu device)\nThere are multiple algorithms for efficient distributed communication, but the most popular and used one is RING. (If you’re interested, there’s a paper that dives deep into NCCL operations and also a paper about a new (possibly better) algorithm called PAT.)\nThere’s one particular collective we care about right now: all‑reduce takes data from each rank and modifies the tensor in place to be the SUM/AVG/MAX across all ranks. SUM is the default.\nIllustration of Ring all-reduce algorithm\nWe start with different tensors on each rank and eventually obtain an elementwise sum on each rank. Image above show every step of the process. Some steps do partial reduce and broadcast, some do only broadcast (when final sum is obtained on one rank).\nI’ve labeled summation with red arrows and broadcasting (or copying from one rank to another) with green. Green also indicates completed elements within the tensors.\nFor tensor of size $N$ and $P$ ranks:\nEach rank sends/receives $\\frac{2(P - 1)}PN$ bytes,\nand the effective bandwidth is approximately $b\\frac{P}{2(P-1)}$,\nwhere $b$ is the per-link bandwidth.\nFor the H100, $b=25GB/s$; for the B100, it’s $50GB/s$ with NVLink 5\nFor PCIe4-x16, the total bandwidth is $16GB/s$ shared across all GPUs, so the per-link bandwidth is $4GB/s$ if we have four GPUs.\nFor PCIe5-x16, it’s double that – $8GB/s$ per-link with four GPUs.\nUsing that formula, effective all-reduce time for 1GB tensor and eight GPUs is roughly:\n7ms for H100 3.5ms for B100 For comparison, with four GPUs on PCIe4 (my setup),\nthe expected time is about 375ms in PCIe4-x16,\nor 187ms in PCIe5-x16.\nBack to DDP.\nOverall idea:\nRun your training as usual on each rank Provide sharded portion of batch (split data, so each rank processes a chunk). Synchronize gradients from each rank to be average across all ranks Now each rank holds gradients from all ranks, call optimizer.step Weights become up-to-date automatically, since they receive the same weight update. Going from 1 device to $N$ devices is achieved by multiplying your global batch size by $N$ (and scaling the learning rate by $\\sqrt{n}$).\nYou can do this directly in your training loop: shard your data across ranks and do an all‑reduce when you have grads. You can reduce communication by using gradient accumulation and syncing only once per grad_accumulation_steps, at the cost of slight short‑term divergence between ranks.\nAfter every backward, when you want to sync, just call:\nfor p in self.model.parameters(): if p.grad is not None: dist.all_reduce(p.grad) It’s usually a good practice to scale your loss (dividing by WORLD_SIZE) and just sum the gradients, instead of averaging grads after all-reduce on each rank.\nFor dataset sharding, it’s often easiest to keep your Dataset instance in memory (you should memory‑map from disk anyway), read one large batch with the same random seed on every rank, and return the slice of data that corresponds to your rank. This can become tricky at 1000+ GPUs, where a distributed batch sampler is preferable.\nDDP Illustration\nThis works, but it inevitably introduces communication overhead, since by default all_reduce is synchronous.\nGoing async To make it faster, we can overlap communication with the backward pass. We send gradients to be summed the moment they appear. PyTorch provides backward hooks that trigger whenever a parameter’s gradient is updated. We should also use asynchronous collectives (i.e., dist.all_reduce(async_op=True)).\nWhen going async, we need to collect handles and ensure they all finish by calling handle.wait()\nIt’s a good idea to separate this logic into a dedicated class now:\nclass DDP(nn.Module): def __init__(self, module): super().__init__() self.module = module # broadcast weights if dist.is_initialized(): for p in self.module.parameters(): dist.broadcast(p.data, src=0) # registering hooks for p in self.module.parameters(): if p.is_leaf and p.requires_grad: p.register_post_accumulate_grad_hook(self._hook) self._should_all_reduce = True self.handles = [] def _hook(self, p: Tensor) -\u003e None: if p.grad is not None and self._should_all_reduce: # TODO: compress grads to bf16 and do sum accumulation in fp32 handle = dist.all_reduce(p.grad, dist.ReduceOp.SUM, async_op=True) self.handles.append(handle) @contextmanager def no_sync(self): before = self._should_all_reduce self._should_all_reduce = False try: yield finally: self._should_all_reduce = before def forward(self, *args, **kwargs): return self.module(*args, **kwargs) def finish_gradient_synchronization(self) -\u003e float: t0 = time.monotonic() for h in self.handles: h.wait() self.handles.clear() time_comm = time.monotonic() - t0 return time_comm First, we broadcast model weights from rank 0 to all other ranks so we start with identical weights (weights might diverge if your random seed isn’t fixed and models initialize differently).\nThen we set up the PyTorch hooks. You can read more about backward hooks here.\nInside the hook function we call async all-reduce operation and save handle that’s been returned. After all gradients are computed, we wait of the remaining collectives to be completed in finish_gradient_synchronization.\nBecause we’re using hooks, they trigger as soon as a gradient is updated. We might not want to sync immediately (e.g., during gradient accumulation). Adding a no_sync context manager makes this straightforward (considering you know some python details).\nBucketing Another important optimization is batching (or bucketing) gradients. Sending many small gradients is worse than sending a few large gradient buckets (though it can incur overhead if computation finishes and you’re left waiting for the last bucket to transfer). To do so, we flatten out gradients during backward hook, add to a bucket and send it when it’s full.\nIt’s simple to implement by assigning a bucket index up front and sending as soon as a full bucket is collected. (Keep in mind you can’t flatten tensors of different dtypes, so assign them to different buckets.) We keep a few buckets in GPU memory, and after unpacking a finished bucket we clear it (by setting group elements back to None).\nHere’s the full code for DDP implementation:\nimport time from contextlib import contextmanager import torch import torch.nn as nn import torch.distributed as dist from torch import Tensor class DDP(nn.Module): def __init__(self, module, bucket_size_mb: float = 50): super().__init__() self.module = module self.bucket_size = bucket_size_mb * 1024 * 1024 # p name -\u003e bucket_idx self.buckets_map = {} if dist.is_initialized(): cur_bucket_id = 0 cur_bucket_size = 0 prev_dt = None for n, p in list(self.module.named_parameters())[::-1]: dist.broadcast(p.data, src=0) if p.is_leaf and p.requires_grad: tensor_bytes = p.data.numel() * p.data.element_size() dt = p.data.dtype # start new bucket if dtype changes or size would overflow if (prev_dt is not None and dt != prev_dt) or cur_bucket_size + tensor_bytes \u003e self.bucket_size: cur_bucket_id += 1 cur_bucket_size = 0 cur_bucket_size += tensor_bytes self.buckets_map[n] = cur_bucket_id prev_dt = dt # bucket ix -\u003e param names self.bucket_to_names = {} for n, bucket_idx in self.buckets_map.items(): self.bucket_to_names.setdefault(bucket_idx, []).append(n) for n, p in self.module.named_parameters(): if p.is_leaf and p.requires_grad: bucket_idx = self.buckets_map[n] param_name = n # here's how we could pass some global variable into a state of a hook def make_hook(bucket_idx=bucket_idx, param_name=param_name): # torch hook expect only param as an input def _hook_inner(p: Tensor) -\u003e None: return self._hook(bucket_idx, param_name, p) return _hook_inner p.register_post_accumulate_grad_hook(make_hook()) self._should_all_reduce = True self.handles = [] self.total_bytes = 0 # bucket idx -\u003e group, initialize buckets with None self.buckets = { bucket_idx: [None for _ in range(len(names))] for bucket_idx, names in self.bucket_to_names.items() } def _hook(self, bucket_idx: int, param_name: str, p: Tensor) -\u003e None: \"\"\" Main backward hook with future that would unflatten the param group We would construct param group deterministicaly by name until order matches 1-1 \"\"\" if p.grad is not None and self._should_all_reduce: g = p.grad tensor_bytes = g.numel() * g.element_size() self.total_bytes += tensor_bytes grad_position = self.bucket_to_names[bucket_idx].index(param_name) self.buckets[bucket_idx][grad_position] = g # no more None left if len([x for x in self.buckets[bucket_idx] if x is None]) == 0: group = self.buckets.pop(bucket_idx) self.buckets[bucket_idx] = [None for _ in range(len(group))] flat = torch._utils._flatten_dense_tensors(group) handle = dist.all_reduce(flat, dist.ReduceOp.SUM, async_op=True) def _on_finish(_, flat=flat, group=group): torch._utils._unflatten_dense_tensors(flat, group) handle.get_future().then(_on_finish) self.handles.append(handle) @contextmanager def no_sync(self): before = self._should_all_reduce self._should_all_reduce = False try: yield finally: self._should_all_reduce = before def forward(self, *args, **kwargs): return self.module(*args, **kwargs) def finish_gradient_synchronization(self) -\u003e float: t0 = time.monotonic() for h in self.handles: h.wait() self.handles.clear() time_comm = time.monotonic() - t0 return time_comm Main difference from previous code is a bit tedious bucket assignment and async operators with more involved design of backward hooks.\nNotice that we flatten gradients into a 1d tensor and then unflatten and set local gradients on receive. It doesn’t involve memory copy, since it would be a just a view.\nHere’s one important pattern that we would exploit further.\nhandle = dist.all_reduce(flat, dist.ReduceOp.SUM, async_op=True) def _on_finish(_, flat=flat, group=group): torch._utils._unflatten_dense_tensors(flat, group) handle.get_future().then(_on_finish) self.handles.append(handle) FSDP You may notice we’re doing repetitive work by running the same model on each rank. We can split the optimizer state, gradients, and model across ranks, then combine only what’s needed with collectives. If we are able to overlap these, we save a lot of memory! But let’s discuss the optimizations separately.\nSharding optimizer states is straightforward – keep only a portion of the optimizer state on each rank.\nWhen we get full gradients, we update only the corresponding portion of the optimizer state and model weights. After that, we call all‑gather (will be discussed later) to assemble updated weights on each device or just broadcast owned portions. AdamW state is elementwise, so it’s obvious how to split it.\nSharding gradients is also simple: say we only care about a portion of the weights (different weights per rank for the optimizer). This means gradients populate only a portion of the weights, so we store less in memory. Since they interact only with a portion of the Adam state, we save memory there too. A bit of a challenge is to keep it all aligned.\nSharding the model is more complicated. Before the forward of each layer, we need to all‑gather the full layer weights, do the forward pass, acquire activations, move to the next layer and so on. At backward we need to transfer gradients on corresponding ranks with reduce-scatter for every layer one by one.\nSharding optimizer states is called ZeRO-1, optimizer+grads – ZeRO-2, optimizer+grads+models – ZeRO-3 or FSDP (Fully sharded Data Parallel)\nZeRO-1 (optimizer sharding) To avoid dealing with parameter shapes that aren’t divisible by world_size, we can assign different parameters to different ranks. Simplest way would be to select optimizer state portions and roughly divide it (might not be perfect, but simple to implement)\nThis is how ZeRO-1 can be implemented:\nimport torch.distributed as dist from torch.optim import Optimizer class ShardedOptimizer(Optimizer): def __init__(self, params, optimizer_cls: type[Optimizer], **kwargs): self.sharded_params = [] params = list(params) super().__init__(params, kwargs) assert dist.is_initialized() self.rank, self.world_size = dist.get_rank(), dist.get_world_size() assert not isinstance(params[0], dict), \"param groups are not supported\" n = len(params) # determine chunks to cover all params chunk_size = n // self.world_size indices = [0] for i in range(self.world_size): new = min(indices[-1] + chunk_size, n) if i == self.world_size - 1: new += (n - new) indices.append(new) self.params_of_rank = [params[l:r] for l, r in zip(indices[:-1], indices[1:])] self.sharded_params = self.params_of_rank[self.rank] self.optimizer = optimizer_cls(self.sharded_params, **kwargs) self.params = params print(f\"[rank={self.rank}] {len(self.sharded_params)=} {len(params)=}\") def zero_grad(self, **kwargs): for p in self.sharded_params: p.grad = None def step(self, closure=None, **kwargs): self.optimizer.step(closure=closure, **kwargs) print(f\"[rank={self.rank}] step done\") for src_rank in range(self.world_size): for p in self.params_of_rank[src_rank]: # we are the sender if src_rank == self.rank: buf = p.detach() # we are now the receiver else: buf = torch.empty_like(p) dist.broadcast(buf, src=src_rank) # copy weight after receiving if src_rank != self.rank: with torch.no_grad(): p.copy_(buf) We use dist.broadcast because, after sharding optimizer states, each rank updates only a portion of the model weights each step, and we need to communicate the missing pieces to other ranks.\nThis can be a bit tricky because distributed code on each rank should run exactly the same, but different ranks “own” different params. In the code above, we iterate over each parameter group. If it’s the group we own, we’re the sender; otherwise we receive into a buffer of the same shape and dtype. After broadcast, we copy the received buffer into the corresponding model weight.\nLet’s run some training to see the benefits:\nEach GPU now uses less memory! (First example isn’t great because Muon state is 2× smaller than Adam and my model is already small, so the benefit isn’t obvious, but it’s a good check that it’s visibly lower.) Activations will take more memory here than model or optimizer states (mainly due to a large batch size).\nOn the second image, the benefit is much more visible.\nSmall model Large model 93% memory vs 92% memory\n93% memory vs 88% memory\nFor the async version of broadcast, use the pattern we already learned in DDP:\nhandle = dist.broadcast(buf, src=src_rank, async_op=True) def _finish(_, buf=buf, p=p, src_rank=src_rank): # copy weight after receiving if src_rank != self.rank: with torch.no_grad(): p.copy_(buf) handle.get_future().then(_finish) handles.append(handle) Pros: Simple to implement, works with any optimizer No communication overhead (when overlapping broadcast) Cons: Extra class Note that ShardedOptimizer works alongside DDP.\nZeRO-2 (gradient sharding) As you noticed, we compute the full gradient on each rank but only use part of it (since we track only a portion of the optimizer state → we update only part of the weights).\nTo save more memory, we should send only the “owned” portion of grads during the DDP step, instead of costly all‑reduce for all grads. That means we need to modify our DDP implementation somehow.\nTo achieve ZeRO‑2, let’s study our third communication primitive: reduce‑scatter.\nWe chunk local tensor and send it, then it is reduced on host.\nModification that is needed on top of DDP to implement ZeRO-2:\nWith reduce‑scatter we can no longer create buckets of arbitrary sizes; we need to fully flatten our gradient tensors (basically have all parameters flattened), then pad and chunk them. Their length must always be chunk_size * world_size.\nSuppose we have some algorithm that does this for us. But for Muon we still need to re‑create the full gradient in optimizer.step for computing the Newton–Schulz iteration, as noted in the Moonshot paper:\nWe do that with all‑gather – in my opinion the simplest communication collective to understand:\nIt fills a full tensor by gathering from all ranks into an empty tensor of the full size.\nYou can notice now that All-reduce consists of reduce-scatter followed by all-gather (or vice versa). Both all-gather and reduce-scater send $N$ elements, while All-reduce sends $2N$ elements.\nIn case of ZeRO-2 gradient sharding it seems like we can just replace all‑reduce with reduce‑scatter, but in reality we need to rework how we treat gradients in the DDP class. We need to create flat buffers, populate them in backward hooks without copies, split into segments aligned with parameter lengths (we don’t want a parameter split across segments), and instead of sending all‑reduce when a bucket is ready, send a segment with reduce‑scatter (with padding so it evenly splits across world_size) when it’s ready, and populate “owned” gradients.\nUp to this point I hadn’t used AI tools for my development process, but for ZeRO‑2 I gave up – so I’ll jump straight to the code below. It actually took me a whole day to make it work. I could get a non‑overlapped version with some memory benefit, but it was slow. Many times when I added overlapping, I hit OOM. But it was helpful to understand reduce‑scatter in detail.\nFrom the distributed‑code standpoint, every line must be executed on each rank. It’s simpler to implement ZeRO‑2 by sharding gradients by slices, so that every rank holds only a reduced version of gradient (local gradient). You should also remember that you cannot flatten gradients of 2D parameters and chunk, but instead you should slice by rows (since Muon requires full 2D shape of reconstructed gradient, compared to Adam which can work elementwise and doesn’t care about particular shape of the gradient).\nIn the end, for me a correct implementation requires storing both the model and optimizer(s) in a single class, storing parameter and grad shards as optimizer state elements (in a state[p]), and carefully preserving structural correctness with unusual world sizes (e.g., for a world size of 3 you’ll want to pad grads, chunk them, and then restore the correct shape).\nCode if you're interested \"\"\" Implementation of ZeRO-2 using simple backward hook and slicing of grads \"\"\" import time import math from contextlib import contextmanager import torch import torch.nn as nn import torch.distributed as dist from torch import Tensor from sample_efficient_gpt.utils.profiling import nvtx_range def pad(x, rank, world): \"\"\" Pad tensor 16 with chunk size 6 becomes 18 \"\"\" if x.shape[0] \u003c world: x = x.repeat(world) chunk_size = math.ceil(x.shape[0] / world) target_size = chunk_size * world assert x.shape[0] \u003c= target_size, \"input tensor is too large for padding!\" dx = target_size - x.shape[0] chunk_sizes = [chunk_size, chunk_size, chunk_size - dx] offsets = [0, chunk_size, chunk_size + chunk_size] if dx \u003e 0: sizes = x.shape padded = torch.cat((x, torch.zeros(dx, *sizes[1:], dtype=x.dtype, device=x.device))) return padded, chunk_sizes[rank] return x, offsets[rank], chunk_sizes[rank] class DDP(nn.Module): def __init__(self, module): super().__init__() self.module = module if dist.is_initialized(): for p in self.module.parameters(): dist.broadcast(p.data, src=0) for p in self.module.parameters(): if p.is_leaf and p.requires_grad: p.register_post_accumulate_grad_hook(self._hook) self._should_all_reduce = True self.handles = [] self.rank, self.world = dist.get_rank(), dist.get_world_size() def _hook(self, p: Tensor) -\u003e None: if p.grad is not None and self._should_all_reduce: with nvtx_range(\"reduce-scatter hook\"): # TODO: compress grads to bf16 and do sum accumulation in fp32 grad = p.grad print(\"received full grad\", grad) p.grad = None grad, offset, chunk_size = pad(grad, self.rank, self.world) p.grad = torch.empty_like(p) handle = dist.reduce_scatter_tensor(p.grad[offset:offset+chunk_size], grad, dist.ReduceOp.SUM, async_op=True) self.handles.append(handle) @contextmanager def no_sync(self): before = self._should_all_reduce self._should_all_reduce = False try: yield finally: self._should_all_reduce = before def forward(self, *args, **kwargs): return self.module(*args, **kwargs) def finish_gradient_synchronization(self) -\u003e float: torch.cuda.synchronize() t0 = time.monotonic() for h in self.handles: h.wait() self.handles.clear() torch.cuda.synchronize() time_comm = time.monotonic() - t0 return time_comm This implementation is not fully correct, since it uses slightly more memory for local buffers, and for larger models I’ve often gotten OOM, so use it for reference only.\nPros: Good idea, simple to understand Low overhead when done right Cons: Awful implementation process Pro-tip and a reminder: you can crank up gradient accumulation when dealing with those communication constrained problems, and most of the slowdown goes away (i.e. you can train with gradient accumulation=8 (i haven’t tried 16, it might work too) and higher lr, and training doesn’t diverge). So you sync gradients only every grad accum steps.\nPro tip: you can crank up gradient accumulation for communication-constrained setups, and most of the slowdown goes away (e.g., try gradient_accumulation=8 or 16 and a higher LR). You sync gradients only every accumulation step.\nZeRO-3 aka FSDP At this stage, we can actually shard the model parameters themselves, not just the optimizer states — but this comes at a cost. We would need to all‑gather each model layer during the forward pass and reduce‑scatter gradients during the backward pass. Things can get messy quickly, especially if you aim to overlap communication and computation and prefetch next layer while processing the current layer.\nAt every layer:\nConstruct full (unsharded) parameters by calling all-gather Perform forward pass and store activations Offload layer weights and go to the next layer During backward:\nLoad stored activations Run all-gather model weights again if used by gradient function Obtain full gradient for that layer Shard gradient and reduce with other ranks via reduce-scatter Offload full gradient and model weights (if applicable) As you can see, we need to store activations for every layer (unless we do something like activation checkpointing, in which case we would compute activations in the backward pass “on-demand”) and do a second all-gather for the backward pass. Some operations can be overlapped and it’s trivial to implement a pre-fetching of next layer while processing the current one with extra used memory cost. This is a bit similar to what we’ve been doing for async DDP but it is also applicable to the forward pass now.\nI have no skill to implement FSDP, so no code, you could just use\nfrom torch.distributed.fsdp import fully_shard, MixedPrecisionPolicy, FSDPModule fsdp_kwargs = { \"mp_policy\": MixedPrecisionPolicy( param_dtype=torch.bfloat16, reduce_dtype=torch.float32, ) } for layer in model.blocks: fully_shard(layer, **fsdp_kwargs) fully_shard(model, **fsdp_kwargs) on your model.\nPros: Maximum memory savings; already fully supported in torch (even composable with torchao FP8) Cons: Highest overhead Can’t be mitigated with gradient accumulation Since I have slow PCIe for my communication, this dropped my MFU from 40% to 6% with default settings.\nTensor Parallel We know from linear algebra that we could multiply matrices by blocks.\nIn our case, if we shard first matrix by rows, and second by columns, output remains sharded on each rank (you could imagine rank 1 covers second row and results in a row which remains sharded on a second row)\nSo, when you should use Tensor Parallel?\nWhen your batch sice becomes excessively large due to large DP group, so it’s a way to regulate batch size (and since some optimizers starts to lose their strength at very large batch sizes) When you cannot run with FSDP with even batch=1 (model is too large). TP is a way to shard activations and hence reduce memory footprint even more. Since transfering activations across GPUs might be very costly, TP is usually applied inside a single node. It also only makes sense to shard either long sequences (output of RMSNorm) or proper matrices.\nIt also best to shard row-wise first matrix (row-major) and column-wise second matrix, so that when you multiply them together you get correct sharded output on this rank, without the need of doing all-gather and all-reduce, but instead you will do all-gather at the beginning of a layer and reduce-scatter at the end.\nIt also doesn’t make much sense to apply TP on non powers of 2. Although possible to pad, overhead and complexity just becomes too high.\nSince 2.6 torch natively supports tensor parallel which works pretty well for basic cases.\nfrom torch.distributed.tensor.parallel import ColwiseParallel, RowwiseParallel, parallelize_module layer_tp_plan = { # by default ColwiseParallel input layouts is replicated # and RowwiseParallel output layouts is replicated \"feed_foward.w1\": ColwiseParallel(), \"feed_forward.w2\": RowwiseParallel(), \"feed_forward.w3\": ColwiseParallel(), } for layer_id, transformer_block in enumerate(model.layers): parallelize_module( module=transformer_block, device_mesh=tp_mesh, parallelize_plan=layer_tp_plan, ) It will handle all-gather and all-reduce before and after the TP plan. It won’t handle async TP or more handy FP8 amax sharing, so you will still need to go in-depth if you want maximum efficiency.\nBy calling parallelize_module it will monkey-patch Tensor to DTensor and add communication hooks.\nTensor Parallel by itself has some disadvantages: Obviously it’s almost impossible to have tp group size not be a power of 2. I could imagine splitting a matrix by 3, but then re-combining that with the next matrix would feel almost impossible and probably compute inefficient. When you split your matrix, you assume that your existing kernel would work similarly, but chances are it requires different optimal tile size and your autotune might miss it (in simple terms, smaller matrices would benefit from smaller tile sizes)\n",
+  "wordCount" : "4037",
+  "inLanguage": "en",
+  "datePublished": "2025-10-07T00:00:00Z",
+  "dateModified": "2025-10-07T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "George Grigorev"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://localhost:1313/posts/introduction-to-parallelism/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "George Grigorev Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://localhost:1313/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="George Grigorev Blog (Alt + H)">George Grigorev Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li><a href="/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+            <li><a href="/publications/" title="Publications">
+                    <span>Publications</span>
+                </a>
+            </li>
+            <li><a href="/posts/" title="Blog">
+                    <span>Blog</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Introduction to parallelism in PyTorch
+    </h1>
+    <div class="post-meta"><span title='2025-10-07 00:00:00 +0000 UTC'>October 7, 2025</span>&nbsp;·&nbsp;<span>19 min</span>&nbsp;·&nbsp;<span>4037 words</span>&nbsp;·&nbsp;<span>George Grigorev</span>
+
+</div>
+  </header> <div class="toc">
+    <details  open>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#why-parallelism">Why Parallelism</a></li>
+    <li><a href="#ddp">DDP</a></li>
+    <li><a href="#fsdp">FSDP</a></li>
+    <li><a href="#tensor-parallel">Tensor Parallel</a></li>
+  </ul>
+</nav>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><p>Training large models inevitably requires a solid understanding of parallelism techniques. In this post, I&rsquo;ll give a practical, in-depth overview of the most common approaches — DDP, FSDP, and TP — and how they&rsquo;re actually used in real PyTorch training setups.</p>
+<p>This article was inspired by the excellent “How to Scale Your Model” <a href="https://jax-ml.github.io/scaling-book/index">blog series</a>. While that series is clear and insightful, I felt it was missing some hands-on perspective and real-world lessons from someone who has trained models in the wild.</p>
+<h3 id="why-parallelism">Why Parallelism<a hidden class="anchor" aria-hidden="true" href="#why-parallelism">#</a></h3>
+<p>If you have a single GPU and it&rsquo;s enough for your needs, you don&rsquo;t need to bother. But for most serious workloads, that&rsquo;s not the case. With care, you can often get near‑linear training speedups when using more accelerators. Parallelism is a fundamental topic in ML interviews and in any Research Engineer knowledge.</p>
+<p>Understanding fundamentals will help you to develop better algorithms or take maximum of your accelerators.</p>
+<p><strong>Note:</strong> in all runs in this post I torch.compile the model, so I&rsquo;m not comparing against a non‑compiled version (I believe everyone should do <code>torch.compile</code> by default as a baseline now – be careful about graph breaks though!).</p>
+<h3 id="ddp">DDP<a hidden class="anchor" aria-hidden="true" href="#ddp">#</a></h3>
+<p>The simplest form of parallelism is Distributed Data Parallel (DDP).</p>
+<p>Before we dive in, let&rsquo;s briefly talk about collective communications.</p>
+<p><code>torch.distributed</code> handles collective operations using either the Gloo (CPU) or NCCL (GPU) backend.</p>
+<p>You must specify the <code>WORLD_SIZE</code>, <code>RANK</code>, and <code>MASTER_ADDR</code> environment variables and run the same code on each device or simply run your script with torchrun command:</p>
+<pre tabindex="0"><code>uv run torchrun --nproc_per_node WORLD script.py
+</code></pre><p>Here, we use only 1 node and set <code>WORLD</code> devices at each node (number of gpus)</p>
+<p>Include <code>dist.init_process_group(&quot;nccl&quot;)</code> in <code>script.py</code> to run distributed code.</p>
+<p>(you can also use backend <code>gloo</code> instead and use cpu device)</p>
+<p>There are multiple algorithms for efficient distributed communication, but the most popular and used one is <strong>RING</strong>. (If you&rsquo;re interested, there&rsquo;s a <a href="https://arxiv.org/abs/2507.04786">paper</a> that dives deep into NCCL operations and also a <a href="https://arxiv.org/abs/2506.20252">paper</a> about a new (possibly better) algorithm called <strong>PAT</strong>.)</p>
+<p>There&rsquo;s one particular collective we care about right now: <strong>all‑reduce</strong> takes data from each rank and modifies the tensor in place to be the SUM/AVG/MAX across all ranks. SUM is the default.</p>
+<figure>
+    <img loading="lazy" src="/posts/introduction-to-parallelism/ring_all_reduce_sum.svg"
+         alt="Illustration of Ring all-reduce algorithm"/> <figcaption>
+            <p>Illustration of Ring all-reduce algorithm</p>
+        </figcaption>
+</figure>
+
+<p>We start with different tensors on each rank and eventually obtain an elementwise sum on each rank. Image above show every step of the process. Some steps do partial reduce and broadcast, some do only broadcast (when final sum is obtained on one rank).</p>
+<p>I&rsquo;ve labeled summation with <strong>red arrows</strong> and broadcasting (or copying from one rank to another) with <strong>green</strong>. Green also indicates completed elements within the tensors.</p>
+<br>
+<p>For tensor of size $N$ and $P$ ranks:</p>
+<p>Each rank sends/receives $\frac{2(P - 1)}PN$ bytes,</p>
+<p>and the effective bandwidth is approximately $b\frac{P}{2(P-1)}$,</p>
+<p>where $b$ is the per-link bandwidth.</p>
+<br>
+<p>For the H100, $b=25GB/s$; for the B100, it&rsquo;s $50GB/s$ with NVLink 5</p>
+<p>For PCIe4-x16, the total bandwidth is $16GB/s$ shared across all GPUs, so the per-link bandwidth is $4GB/s$ if we have four GPUs.</p>
+<p>For PCIe5-x16, it&rsquo;s double that – $8GB/s$ per-link with four GPUs.</p>
+<p>Using that formula, effective all-reduce time for 1GB tensor and eight GPUs is roughly:</p>
+<ul>
+<li>7ms for H100</li>
+<li>3.5ms for B100</li>
+</ul>
+<p>For comparison, with four GPUs on PCIe4 (my setup),</p>
+<p>the expected time is about <code>375ms</code> in PCIe4-x16,</p>
+<p>or <code>187ms</code> in PCIe5-x16.</p>
+<hr>
+<p>Back to DDP.</p>
+<p>Overall idea:</p>
+<ol>
+<li>Run your training as usual on each rank
+<ul>
+<li>Provide sharded portion of batch (split data, so each rank processes a chunk).</li>
+</ul>
+</li>
+<li>Synchronize gradients from each rank to be average across all ranks</li>
+<li>Now each rank holds gradients from all ranks, call <code>optimizer.step</code></li>
+<li>Weights become up-to-date automatically, since they receive the same weight update.</li>
+</ol>
+<blockquote>
+<p>Going from 1 device to $N$ devices is achieved by multiplying your global batch size by $N$ (and scaling the learning rate by $\sqrt{n}$).</p></blockquote>
+<p>You can do this directly in your training loop: shard your data across ranks and do an all‑reduce when you have grads. You can reduce communication by using gradient accumulation and syncing only once per <code>grad_accumulation_steps</code>, at the cost of slight short‑term divergence between ranks.</p>
+<p>After every backward, when you want to sync, just call:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> p <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>model<span style="color:#f92672">.</span>parameters():
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> p<span style="color:#f92672">.</span>grad <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>        dist<span style="color:#f92672">.</span>all_reduce(p<span style="color:#f92672">.</span>grad)
+</span></span></code></pre></div><p>It&rsquo;s usually a good practice to scale your loss (dividing by <code>WORLD_SIZE</code>) and just <strong>sum</strong> the gradients, instead of averaging grads after all-reduce on each rank.</p>
+<p>For dataset sharding, it&rsquo;s often easiest to keep your Dataset instance in memory (you should memory‑map from disk anyway), read one large batch with the same random seed on every rank, and return the slice of data that corresponds to your rank. This can become tricky at 1000+ GPUs, where a distributed batch sampler is preferable.</p>
+<figure>
+    <img loading="lazy" src="/posts/introduction-to-parallelism/ddp.svg"
+         alt="DDP Illustration"/> <figcaption>
+            <p>DDP Illustration</p>
+        </figcaption>
+</figure>
+
+<p>This works, but it inevitably introduces communication overhead, since by default <strong>all_reduce</strong> is synchronous.</p>
+<h4 id="going-async">Going async<a hidden class="anchor" aria-hidden="true" href="#going-async">#</a></h4>
+<p>To make it faster, we can overlap communication with the backward pass. We send gradients to be summed the moment they appear. PyTorch provides backward hooks that trigger whenever a parameter&rsquo;s gradient is updated. We should also use asynchronous collectives (i.e., <code>dist.all_reduce(async_op=True)</code>).</p>
+<p>When going async, we need to collect handles and ensure they all finish by calling <code>handle.wait()</code></p>
+<p>It&rsquo;s a good idea to separate this logic into a dedicated class now:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">DDP</span>(nn<span style="color:#f92672">.</span>Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">__init__</span>(self, module):
+</span></span><span style="display:flex;"><span>        super()<span style="color:#f92672">.</span><span style="color:#a6e22e">__init__</span>()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>module <span style="color:#f92672">=</span> module
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># broadcast weights</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> dist<span style="color:#f92672">.</span>is_initialized():
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">for</span> p <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>module<span style="color:#f92672">.</span>parameters():
+</span></span><span style="display:flex;"><span>                dist<span style="color:#f92672">.</span>broadcast(p<span style="color:#f92672">.</span>data, src<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># registering hooks</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> p <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>module<span style="color:#f92672">.</span>parameters():
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> p<span style="color:#f92672">.</span>is_leaf <span style="color:#f92672">and</span> p<span style="color:#f92672">.</span>requires_grad:
+</span></span><span style="display:flex;"><span>                p<span style="color:#f92672">.</span>register_post_accumulate_grad_hook(self<span style="color:#f92672">.</span>_hook)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>_should_all_reduce <span style="color:#f92672">=</span> <span style="color:#66d9ef">True</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>handles <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_hook</span>(self, p: Tensor) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> p<span style="color:#f92672">.</span>grad <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#66d9ef">None</span> <span style="color:#f92672">and</span> self<span style="color:#f92672">.</span>_should_all_reduce:
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># TODO: compress grads to bf16 and do sum accumulation in fp32</span>
+</span></span><span style="display:flex;"><span>            handle <span style="color:#f92672">=</span> dist<span style="color:#f92672">.</span>all_reduce(p<span style="color:#f92672">.</span>grad, dist<span style="color:#f92672">.</span>ReduceOp<span style="color:#f92672">.</span>SUM, async_op<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>handles<span style="color:#f92672">.</span>append(handle)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@contextmanager</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">no_sync</span>(self):
+</span></span><span style="display:flex;"><span>        before <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_should_all_reduce
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>_should_all_reduce <span style="color:#f92672">=</span> <span style="color:#66d9ef">False</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">yield</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">finally</span>:
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>_should_all_reduce <span style="color:#f92672">=</span> before
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">forward</span>(self, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>module(<span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">finish_gradient_synchronization</span>(self) <span style="color:#f92672">-&gt;</span> float:
+</span></span><span style="display:flex;"><span>        t0 <span style="color:#f92672">=</span> time<span style="color:#f92672">.</span>monotonic()
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> h <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>handles:
+</span></span><span style="display:flex;"><span>            h<span style="color:#f92672">.</span>wait()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>handles<span style="color:#f92672">.</span>clear()
+</span></span><span style="display:flex;"><span>        time_comm <span style="color:#f92672">=</span> time<span style="color:#f92672">.</span>monotonic() <span style="color:#f92672">-</span> t0
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> time_comm
+</span></span></code></pre></div><p>First, we broadcast model weights from rank 0 to all other ranks so we start with identical weights (weights might diverge if your random seed isn&rsquo;t fixed and models initialize differently).</p>
+<p>Then we set up the PyTorch hooks. You can read more about backward hooks <a href="https://docs.pytorch.org/docs/stable/notes/autograd.html#backward-hooks-execution">here</a>.</p>
+<p>Inside the hook function we call async <em>all-reduce</em> operation and save handle that&rsquo;s been returned. After all gradients are computed, we wait of the remaining collectives to be completed in <code>finish_gradient_synchronization</code>.</p>
+<p>Because we&rsquo;re using hooks, they trigger as soon as a gradient is updated. We might not want to sync immediately (e.g., during gradient accumulation). Adding a <code>no_sync</code> context manager makes this straightforward (considering you know some python details).</p>
+<h4 id="bucketing">Bucketing<a hidden class="anchor" aria-hidden="true" href="#bucketing">#</a></h4>
+<p>Another important optimization is batching (or bucketing) gradients. Sending many small gradients is worse than sending a few large gradient buckets (though it can incur overhead if computation finishes and you&rsquo;re left waiting for the last bucket to transfer). To do so, we flatten out gradients during backward hook, add to a bucket and send it when it&rsquo;s full.</p>
+<p>It&rsquo;s simple to implement by assigning a bucket index up front and sending as soon as a full bucket is collected. (Keep in mind you can&rsquo;t flatten tensors of different dtypes, so assign them to different buckets.) We keep a few buckets in GPU memory, and after unpacking a finished bucket we clear it (by setting group elements back to None).</p>
+<p>Here&rsquo;s the full code for DDP implementation:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> time
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> contextlib <span style="color:#f92672">import</span> contextmanager
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch.nn <span style="color:#66d9ef">as</span> nn
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch.distributed <span style="color:#66d9ef">as</span> dist
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> torch <span style="color:#f92672">import</span> Tensor
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">DDP</span>(nn<span style="color:#f92672">.</span>Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">__init__</span>(self, module, bucket_size_mb: float <span style="color:#f92672">=</span> <span style="color:#ae81ff">50</span>):
+</span></span><span style="display:flex;"><span>        super()<span style="color:#f92672">.</span><span style="color:#a6e22e">__init__</span>()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>module <span style="color:#f92672">=</span> module
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>bucket_size <span style="color:#f92672">=</span> bucket_size_mb <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># p name -&gt; bucket_idx</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>buckets_map <span style="color:#f92672">=</span> {}
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> dist<span style="color:#f92672">.</span>is_initialized():
+</span></span><span style="display:flex;"><span>            cur_bucket_id <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>            cur_bucket_size <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>            prev_dt <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">for</span> n, p <span style="color:#f92672">in</span> list(self<span style="color:#f92672">.</span>module<span style="color:#f92672">.</span>named_parameters())[::<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]:
+</span></span><span style="display:flex;"><span>                dist<span style="color:#f92672">.</span>broadcast(p<span style="color:#f92672">.</span>data, src<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> p<span style="color:#f92672">.</span>is_leaf <span style="color:#f92672">and</span> p<span style="color:#f92672">.</span>requires_grad:
+</span></span><span style="display:flex;"><span>                    tensor_bytes <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>data<span style="color:#f92672">.</span>numel() <span style="color:#f92672">*</span> p<span style="color:#f92672">.</span>data<span style="color:#f92672">.</span>element_size()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    dt <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>data<span style="color:#f92672">.</span>dtype
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e"># start new bucket if dtype changes or size would overflow</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">if</span> (prev_dt <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#66d9ef">None</span> <span style="color:#f92672">and</span> dt <span style="color:#f92672">!=</span> prev_dt) <span style="color:#f92672">or</span> 
+</span></span><span style="display:flex;"><span>                        cur_bucket_size <span style="color:#f92672">+</span> tensor_bytes <span style="color:#f92672">&gt;</span> self<span style="color:#f92672">.</span>bucket_size:
+</span></span><span style="display:flex;"><span>                        cur_bucket_id <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>                        cur_bucket_size <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    cur_bucket_size <span style="color:#f92672">+=</span> tensor_bytes
+</span></span><span style="display:flex;"><span>                    self<span style="color:#f92672">.</span>buckets_map[n] <span style="color:#f92672">=</span> cur_bucket_id
+</span></span><span style="display:flex;"><span>                    prev_dt <span style="color:#f92672">=</span> dt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># bucket ix -&gt; param names</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>bucket_to_names <span style="color:#f92672">=</span> {}
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> n, bucket_idx <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>buckets_map<span style="color:#f92672">.</span>items():
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>bucket_to_names<span style="color:#f92672">.</span>setdefault(bucket_idx, [])<span style="color:#f92672">.</span>append(n)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> n, p <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>module<span style="color:#f92672">.</span>named_parameters():
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> p<span style="color:#f92672">.</span>is_leaf <span style="color:#f92672">and</span> p<span style="color:#f92672">.</span>requires_grad:
+</span></span><span style="display:flex;"><span>                bucket_idx <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>buckets_map[n]
+</span></span><span style="display:flex;"><span>                param_name <span style="color:#f92672">=</span> n
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e"># here&#39;s how we could pass some global variable into a state of a hook</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">make_hook</span>(bucket_idx<span style="color:#f92672">=</span>bucket_idx, param_name<span style="color:#f92672">=</span>param_name):
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e"># torch hook expect only param as an input</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_hook_inner</span>(p: Tensor) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>_hook(bucket_idx, param_name, p)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">return</span> _hook_inner
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                p<span style="color:#f92672">.</span>register_post_accumulate_grad_hook(make_hook())
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>_should_all_reduce <span style="color:#f92672">=</span> <span style="color:#66d9ef">True</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>handles <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>total_bytes <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># bucket idx -&gt; group, initialize buckets with None</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>buckets <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>            bucket_idx: [<span style="color:#66d9ef">None</span> <span style="color:#66d9ef">for</span> _ <span style="color:#f92672">in</span> range(len(names))] <span style="color:#66d9ef">for</span> bucket_idx, names <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>bucket_to_names<span style="color:#f92672">.</span>items()
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_hook</span>(self, bucket_idx: int, param_name: str, p: Tensor) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Main backward hook with future that would unflatten the param group
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        We would construct param group deterministicaly by name until order matches 1-1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> p<span style="color:#f92672">.</span>grad <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#66d9ef">None</span> <span style="color:#f92672">and</span> self<span style="color:#f92672">.</span>_should_all_reduce:
+</span></span><span style="display:flex;"><span>            g <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>grad
+</span></span><span style="display:flex;"><span>            tensor_bytes <span style="color:#f92672">=</span> g<span style="color:#f92672">.</span>numel() <span style="color:#f92672">*</span> g<span style="color:#f92672">.</span>element_size()
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>total_bytes <span style="color:#f92672">+=</span> tensor_bytes
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            grad_position <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>bucket_to_names[bucket_idx]<span style="color:#f92672">.</span>index(param_name)
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>buckets[bucket_idx][grad_position] <span style="color:#f92672">=</span> g
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># no more None left</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> len([x <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>buckets[bucket_idx] <span style="color:#66d9ef">if</span> x <span style="color:#f92672">is</span> <span style="color:#66d9ef">None</span>]) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>                group <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>buckets<span style="color:#f92672">.</span>pop(bucket_idx)
+</span></span><span style="display:flex;"><span>                self<span style="color:#f92672">.</span>buckets[bucket_idx] <span style="color:#f92672">=</span> [<span style="color:#66d9ef">None</span> <span style="color:#66d9ef">for</span> _ <span style="color:#f92672">in</span> range(len(group))]
+</span></span><span style="display:flex;"><span>                flat <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>_utils<span style="color:#f92672">.</span>_flatten_dense_tensors(group)
+</span></span><span style="display:flex;"><span>                handle <span style="color:#f92672">=</span> dist<span style="color:#f92672">.</span>all_reduce(flat, dist<span style="color:#f92672">.</span>ReduceOp<span style="color:#f92672">.</span>SUM, async_op<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_on_finish</span>(_, flat<span style="color:#f92672">=</span>flat, group<span style="color:#f92672">=</span>group):
+</span></span><span style="display:flex;"><span>                    torch<span style="color:#f92672">.</span>_utils<span style="color:#f92672">.</span>_unflatten_dense_tensors(flat, group)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                handle<span style="color:#f92672">.</span>get_future()<span style="color:#f92672">.</span>then(_on_finish)
+</span></span><span style="display:flex;"><span>                self<span style="color:#f92672">.</span>handles<span style="color:#f92672">.</span>append(handle)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@contextmanager</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">no_sync</span>(self):
+</span></span><span style="display:flex;"><span>        before <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_should_all_reduce
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>_should_all_reduce <span style="color:#f92672">=</span> <span style="color:#66d9ef">False</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">yield</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">finally</span>:
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>_should_all_reduce <span style="color:#f92672">=</span> before
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">forward</span>(self, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>module(<span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">finish_gradient_synchronization</span>(self) <span style="color:#f92672">-&gt;</span> float:
+</span></span><span style="display:flex;"><span>        t0 <span style="color:#f92672">=</span> time<span style="color:#f92672">.</span>monotonic()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> h <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>handles:
+</span></span><span style="display:flex;"><span>            h<span style="color:#f92672">.</span>wait()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>handles<span style="color:#f92672">.</span>clear()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        time_comm <span style="color:#f92672">=</span> time<span style="color:#f92672">.</span>monotonic() <span style="color:#f92672">-</span> t0
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> time_comm
+</span></span></code></pre></div><p>Main difference from previous code is a bit tedious bucket assignment and async operators with more involved design of backward hooks.</p>
+<p>Notice that we flatten gradients into a 1d tensor and then unflatten and set local gradients on receive. It doesn&rsquo;t involve memory copy, since it would be a just a view.</p>
+<p>Here&rsquo;s one important pattern that we would exploit further.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>handle <span style="color:#f92672">=</span> dist<span style="color:#f92672">.</span>all_reduce(flat, dist<span style="color:#f92672">.</span>ReduceOp<span style="color:#f92672">.</span>SUM, async_op<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_on_finish</span>(_, flat<span style="color:#f92672">=</span>flat, group<span style="color:#f92672">=</span>group):
+</span></span><span style="display:flex;"><span>    torch<span style="color:#f92672">.</span>_utils<span style="color:#f92672">.</span>_unflatten_dense_tensors(flat, group)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>handle<span style="color:#f92672">.</span>get_future()<span style="color:#f92672">.</span>then(_on_finish)
+</span></span><span style="display:flex;"><span>self<span style="color:#f92672">.</span>handles<span style="color:#f92672">.</span>append(handle)
+</span></span></code></pre></div><figure>
+    <img loading="lazy" src="/posts/introduction-to-parallelism/ddp_async.svg"/> 
+</figure>
+
+<h3 id="fsdp">FSDP<a hidden class="anchor" aria-hidden="true" href="#fsdp">#</a></h3>
+<p>You may notice we&rsquo;re doing repetitive work by running the same model on each rank. We can split the optimizer state, gradients, and model across ranks, then combine only what&rsquo;s needed with collectives. If we are able to overlap these, we save a lot of memory! But let&rsquo;s discuss the optimizations separately.</p>
+<p>Sharding optimizer states is straightforward – keep only a portion of the optimizer state on each rank.</p>
+<p>When we get full gradients, we update only the corresponding portion of the optimizer state and model weights. After that, we call <strong>all‑gather</strong> (will be discussed later) to assemble updated weights on each device or just broadcast owned portions. AdamW state is elementwise, so it&rsquo;s obvious how to split it.</p>
+<p>Sharding gradients is also simple: say we only care about a portion of the weights (different weights per rank for the optimizer). This means gradients populate only a portion of the weights, so we store less in memory. Since they interact only with a portion of the Adam state, we save memory there too. A bit of a challenge is to keep it all aligned.</p>
+<p>Sharding the model is more complicated. Before the forward of each layer, we need to <strong>all‑gather</strong> the full layer weights, do the forward pass, acquire activations, move to the next layer and so on. At backward we need to transfer gradients on corresponding ranks with <strong>reduce-scatter</strong> for every layer one by one.</p>
+<p>Sharding optimizer states is called <strong>ZeRO-1</strong>, optimizer+grads – <strong>ZeRO-2</strong>, optimizer+grads+models – <strong>ZeRO-3</strong> or <strong>FSDP</strong> (Fully sharded Data Parallel)</p>
+<h4 id="zero-1-optimizer-sharding">ZeRO-1 (optimizer sharding)<a hidden class="anchor" aria-hidden="true" href="#zero-1-optimizer-sharding">#</a></h4>
+<p>To avoid dealing with parameter shapes that aren&rsquo;t divisible by <code>world_size</code>, we can assign different parameters to different ranks. Simplest way would be to select optimizer state portions and roughly divide it (might not be perfect, but simple to implement)</p>
+<p>This is how ZeRO-1 can be implemented:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> torch.distributed <span style="color:#66d9ef">as</span> dist
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> torch.optim <span style="color:#f92672">import</span> Optimizer
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ShardedOptimizer</span>(Optimizer):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">__init__</span>(self, params, optimizer_cls: type[Optimizer], <span style="color:#f92672">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>sharded_params <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>        params <span style="color:#f92672">=</span> list(params)
+</span></span><span style="display:flex;"><span>        super()<span style="color:#f92672">.</span><span style="color:#a6e22e">__init__</span>(params, kwargs)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">assert</span> dist<span style="color:#f92672">.</span>is_initialized()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>rank, self<span style="color:#f92672">.</span>world_size <span style="color:#f92672">=</span> dist<span style="color:#f92672">.</span>get_rank(), dist<span style="color:#f92672">.</span>get_world_size()
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">assert</span> <span style="color:#f92672">not</span> isinstance(params[<span style="color:#ae81ff">0</span>], dict), <span style="color:#e6db74">&#34;param groups are not supported&#34;</span>
+</span></span><span style="display:flex;"><span>        n <span style="color:#f92672">=</span> len(params)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># determine chunks to cover all params</span>
+</span></span><span style="display:flex;"><span>        chunk_size <span style="color:#f92672">=</span> n <span style="color:#f92672">//</span> self<span style="color:#f92672">.</span>world_size
+</span></span><span style="display:flex;"><span>        indices <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(self<span style="color:#f92672">.</span>world_size):
+</span></span><span style="display:flex;"><span>            new <span style="color:#f92672">=</span> min(indices[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">+</span> chunk_size, n)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> i <span style="color:#f92672">==</span> self<span style="color:#f92672">.</span>world_size <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>:
+</span></span><span style="display:flex;"><span>                new <span style="color:#f92672">+=</span> (n <span style="color:#f92672">-</span> new)
+</span></span><span style="display:flex;"><span>            indices<span style="color:#f92672">.</span>append(new)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>params_of_rank <span style="color:#f92672">=</span> [params[l:r] <span style="color:#66d9ef">for</span> l, r <span style="color:#f92672">in</span> zip(indices[:<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>], indices[<span style="color:#ae81ff">1</span>:])]
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>sharded_params <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>params_of_rank[self<span style="color:#f92672">.</span>rank]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>optimizer <span style="color:#f92672">=</span> optimizer_cls(self<span style="color:#f92672">.</span>sharded_params, <span style="color:#f92672">**</span>kwargs)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>params <span style="color:#f92672">=</span> params
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;[rank=</span><span style="color:#e6db74">{</span>self<span style="color:#f92672">.</span>rank<span style="color:#e6db74">}</span><span style="color:#e6db74">] </span><span style="color:#e6db74">{</span>len(self<span style="color:#f92672">.</span>sharded_params)<span style="color:#e6db74">=}</span><span style="color:#e6db74"> </span><span style="color:#e6db74">{</span>len(params)<span style="color:#e6db74">=}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">zero_grad</span>(self, <span style="color:#f92672">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> p <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>sharded_params:
+</span></span><span style="display:flex;"><span>            p<span style="color:#f92672">.</span>grad <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">step</span>(self, closure<span style="color:#f92672">=</span><span style="color:#66d9ef">None</span>, <span style="color:#f92672">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>optimizer<span style="color:#f92672">.</span>step(closure<span style="color:#f92672">=</span>closure, <span style="color:#f92672">**</span>kwargs)
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;[rank=</span><span style="color:#e6db74">{</span>self<span style="color:#f92672">.</span>rank<span style="color:#e6db74">}</span><span style="color:#e6db74">] step done&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> src_rank <span style="color:#f92672">in</span> range(self<span style="color:#f92672">.</span>world_size):
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">for</span> p <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>params_of_rank[src_rank]:
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e"># we are the sender</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> src_rank <span style="color:#f92672">==</span> self<span style="color:#f92672">.</span>rank:
+</span></span><span style="display:flex;"><span>                    buf <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>detach()
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e"># we are now the receiver</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>                    buf <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>empty_like(p)
+</span></span><span style="display:flex;"><span>                
+</span></span><span style="display:flex;"><span>                dist<span style="color:#f92672">.</span>broadcast(buf, src<span style="color:#f92672">=</span>src_rank)
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e"># copy weight after receiving</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> src_rank <span style="color:#f92672">!=</span> self<span style="color:#f92672">.</span>rank:
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">with</span> torch<span style="color:#f92672">.</span>no_grad():
+</span></span><span style="display:flex;"><span>                        p<span style="color:#f92672">.</span>copy_(buf)
+</span></span></code></pre></div><p>We use <code>dist.broadcast</code> because, after sharding optimizer states, each rank updates only a portion of the model weights each step, and we need to communicate the missing pieces to other ranks.</p>
+<p>This can be a bit tricky because distributed code on each rank should run exactly the same, but different ranks “own” different params. In the code above, we iterate over each parameter group. If it&rsquo;s the group we own, we&rsquo;re the sender; otherwise we receive into a buffer of the same shape and dtype. After broadcast, we copy the received buffer into the corresponding model weight.</p>
+<figure>
+    <img loading="lazy" src="/posts/introduction-to-parallelism/broadcast.svg"/> 
+</figure>
+
+<p>Let&rsquo;s run some training to see the benefits:</p>
+<p>Each GPU now uses less memory! (First example isn&rsquo;t great because Muon state is 2× smaller than Adam and my model is already small, so the benefit isn&rsquo;t obvious, but it&rsquo;s a good check that it&rsquo;s visibly lower.) Activations will take more memory here than model or optimizer states (mainly due to a large batch size).</p>
+<p>On the second image, the benefit is much more visible.</p>
+<table>
+  <thead>
+      <tr>
+          <th>Small model</th>
+          <th>Large model</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><figure>
+    <img loading="lazy" src="/posts/introduction-to-parallelism/zero1_lower_memory_small.jpeg"
+         alt="93% memory vs 92% memory"/> <figcaption>
+            <p>93% memory vs 92% memory</p>
+        </figcaption>
+</figure>
+</td>
+          <td><figure>
+    <img loading="lazy" src="/posts/introduction-to-parallelism/zero1_lower_memory_large.jpeg"
+         alt="93% memory vs 88% memory"/> <figcaption>
+            <p>93% memory vs 88% memory</p>
+        </figcaption>
+</figure>
+</td>
+      </tr>
+  </tbody>
+</table>
+<p>For the async version of broadcast, use the pattern we already learned in DDP:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>handle <span style="color:#f92672">=</span> dist<span style="color:#f92672">.</span>broadcast(buf, src<span style="color:#f92672">=</span>src_rank, async_op<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_finish</span>(_, buf<span style="color:#f92672">=</span>buf, p<span style="color:#f92672">=</span>p, src_rank<span style="color:#f92672">=</span>src_rank):
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># copy weight after receiving</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> src_rank <span style="color:#f92672">!=</span> self<span style="color:#f92672">.</span>rank:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">with</span> torch<span style="color:#f92672">.</span>no_grad():
+</span></span><span style="display:flex;"><span>            p<span style="color:#f92672">.</span>copy_(buf)
+</span></span><span style="display:flex;"><span>handle<span style="color:#f92672">.</span>get_future()<span style="color:#f92672">.</span>then(_finish)
+</span></span><span style="display:flex;"><span>handles<span style="color:#f92672">.</span>append(handle)
+</span></span></code></pre></div><h4 id="pros">Pros:<a hidden class="anchor" aria-hidden="true" href="#pros">#</a></h4>
+<ul>
+<li>Simple to implement, works with any optimizer</li>
+<li>No communication overhead (when overlapping broadcast)</li>
+</ul>
+<h4 id="cons">Cons:<a hidden class="anchor" aria-hidden="true" href="#cons">#</a></h4>
+<ul>
+<li>Extra class</li>
+</ul>
+<p>Note that ShardedOptimizer works alongside DDP.</p>
+<h4 id="zero-2-gradient-sharding">ZeRO-2 (gradient sharding)<a hidden class="anchor" aria-hidden="true" href="#zero-2-gradient-sharding">#</a></h4>
+<p>As you noticed, we compute the full gradient on each rank but only use part of it (since we track only a portion of the optimizer state → we update only part of the weights).</p>
+<p>To save more memory, we should send only the “owned” portion of grads during the DDP step, instead of costly <strong>all‑reduce</strong> for all grads. That means we need to modify our DDP implementation somehow.</p>
+<p>To achieve ZeRO‑2, let&rsquo;s study our third communication primitive: <strong>reduce‑scatter</strong>.</p>
+<figure>
+    <img loading="lazy" src="/posts/introduction-to-parallelism/reduce_scatter.svg"/> 
+</figure>
+
+<p>We chunk local tensor and send it, then it is reduced on host.</p>
+<p>Modification that is needed on top of DDP to implement ZeRO-2:</p>
+<p>With reduce‑scatter we can no longer create buckets of arbitrary sizes; we need to fully flatten our gradient tensors (basically have all parameters flattened), then pad and chunk them. Their length must always be <code>chunk_size * world_size</code>.</p>
+<p>Suppose we have some algorithm that does this for us. But for Muon we still need to re‑create the full gradient in <code>optimizer.step</code> for computing the Newton–Schulz iteration, as noted in the Moonshot paper:</p>
+<figure>
+    <img loading="lazy" src="/posts/introduction-to-parallelism/distributed_muon.jpeg"/> 
+</figure>
+
+<p>We do that with <strong>all‑gather</strong> – in my opinion the simplest communication collective to understand:</p>
+<figure>
+    <img loading="lazy" src="/posts/introduction-to-parallelism/all_gather.svg"/> 
+</figure>
+
+<p>It fills a full tensor by gathering from all ranks into an empty tensor of the full size.</p>
+<p>You can notice now that <strong>All-reduce</strong> consists of <strong>reduce-scatter</strong> followed by <strong>all-gather</strong> (or vice versa). Both <strong>all-gather</strong> and reduce-scater send $N$ elements, while <strong>All-reduce</strong> sends $2N$ elements.</p>
+<p>In case of ZeRO-2 gradient sharding it seems like we can just replace <strong>all‑reduce</strong> with <strong>reduce‑scatter</strong>, but in reality we need to rework how we treat gradients in the DDP class. We need to create flat buffers, populate them in backward hooks without copies, split into segments aligned with parameter lengths (we don&rsquo;t want a parameter split across segments), and instead of sending all‑reduce when a bucket is ready, send a segment with reduce‑scatter (with padding so it evenly splits across world_size) when it&rsquo;s ready, and populate “owned” gradients.</p>
+<p>Up to this point I hadn&rsquo;t used AI tools for my development process, but for ZeRO‑2 I gave up – so I&rsquo;ll jump straight to the code below. It actually took me a whole day to make it work. I could get a non‑overlapped version with some memory benefit, but it was slow. Many times when I added overlapping, I hit OOM. But it was helpful to understand <strong>reduce‑scatter</strong> in detail.</p>
+<p>From the distributed‑code standpoint, every line must be executed on each rank. It&rsquo;s simpler to implement ZeRO‑2 by sharding gradients by slices, so that every rank holds only a reduced version of gradient (local gradient). You should also remember that you cannot flatten gradients of 2D parameters and chunk, but instead you should slice by rows (since Muon requires full 2D shape of reconstructed gradient, compared to Adam which can work elementwise and doesn&rsquo;t care about particular shape of the gradient).</p>
+<p>In the end, for me a correct implementation requires storing both the model and optimizer(s) in a single class, storing parameter and grad shards as optimizer state elements (in a <code>state[p]</code>), and carefully preserving structural correctness with unusual world sizes (e.g., for a world size of 3 you&rsquo;ll want to pad grads, chunk them, and then restore the correct shape).</p>
+<details>
+<summary>Code if you're interested</summary>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Implementation of ZeRO-2 using simple backward hook
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">and slicing of grads
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> time
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> math
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> contextlib <span style="color:#f92672">import</span> contextmanager
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch.nn <span style="color:#66d9ef">as</span> nn
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch.distributed <span style="color:#66d9ef">as</span> dist
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> torch <span style="color:#f92672">import</span> Tensor
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> sample_efficient_gpt.utils.profiling <span style="color:#f92672">import</span> nvtx_range
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">pad</span>(x, rank, world):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Pad tensor
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    16 with chunk size 6 becomes 18
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">&lt;</span> world:
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> x<span style="color:#f92672">.</span>repeat(world)
+</span></span><span style="display:flex;"><span>    chunk_size <span style="color:#f92672">=</span> math<span style="color:#f92672">.</span>ceil(x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">/</span> world)
+</span></span><span style="display:flex;"><span>    target_size <span style="color:#f92672">=</span> chunk_size <span style="color:#f92672">*</span> world
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">assert</span> x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">&lt;=</span> target_size, <span style="color:#e6db74">&#34;input tensor is too large for padding!&#34;</span>
+</span></span><span style="display:flex;"><span>    dx <span style="color:#f92672">=</span> target_size <span style="color:#f92672">-</span> x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>    chunk_sizes <span style="color:#f92672">=</span> [chunk_size, chunk_size, chunk_size <span style="color:#f92672">-</span> dx]
+</span></span><span style="display:flex;"><span>    offsets <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>, chunk_size, chunk_size <span style="color:#f92672">+</span> chunk_size]
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> dx <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>        sizes <span style="color:#f92672">=</span> x<span style="color:#f92672">.</span>shape
+</span></span><span style="display:flex;"><span>        padded <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>cat((x, torch<span style="color:#f92672">.</span>zeros(dx, <span style="color:#f92672">*</span>sizes[<span style="color:#ae81ff">1</span>:], dtype<span style="color:#f92672">=</span>x<span style="color:#f92672">.</span>dtype, device<span style="color:#f92672">=</span>x<span style="color:#f92672">.</span>device)))
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> padded, chunk_sizes[rank]
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> x, offsets[rank], chunk_sizes[rank]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">DDP</span>(nn<span style="color:#f92672">.</span>Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">__init__</span>(self, module):
+</span></span><span style="display:flex;"><span>        super()<span style="color:#f92672">.</span><span style="color:#a6e22e">__init__</span>()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>module <span style="color:#f92672">=</span> module
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> dist<span style="color:#f92672">.</span>is_initialized():
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">for</span> p <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>module<span style="color:#f92672">.</span>parameters():
+</span></span><span style="display:flex;"><span>                dist<span style="color:#f92672">.</span>broadcast(p<span style="color:#f92672">.</span>data, src<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> p <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>module<span style="color:#f92672">.</span>parameters():
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> p<span style="color:#f92672">.</span>is_leaf <span style="color:#f92672">and</span> p<span style="color:#f92672">.</span>requires_grad:
+</span></span><span style="display:flex;"><span>                p<span style="color:#f92672">.</span>register_post_accumulate_grad_hook(self<span style="color:#f92672">.</span>_hook)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>_should_all_reduce <span style="color:#f92672">=</span> <span style="color:#66d9ef">True</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>handles <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>rank, self<span style="color:#f92672">.</span>world <span style="color:#f92672">=</span> dist<span style="color:#f92672">.</span>get_rank(), dist<span style="color:#f92672">.</span>get_world_size()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_hook</span>(self, p: Tensor) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> p<span style="color:#f92672">.</span>grad <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#66d9ef">None</span> <span style="color:#f92672">and</span> self<span style="color:#f92672">.</span>_should_all_reduce:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">with</span> nvtx_range(<span style="color:#e6db74">&#34;reduce-scatter hook&#34;</span>):
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e"># TODO: compress grads to bf16 and do sum accumulation in fp32</span>
+</span></span><span style="display:flex;"><span>                grad <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>grad
+</span></span><span style="display:flex;"><span>                print(<span style="color:#e6db74">&#34;received full grad&#34;</span>, grad)
+</span></span><span style="display:flex;"><span>                p<span style="color:#f92672">.</span>grad <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>                grad, offset, chunk_size <span style="color:#f92672">=</span> pad(grad, self<span style="color:#f92672">.</span>rank, self<span style="color:#f92672">.</span>world)
+</span></span><span style="display:flex;"><span>                p<span style="color:#f92672">.</span>grad <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>empty_like(p)
+</span></span><span style="display:flex;"><span>                handle <span style="color:#f92672">=</span> dist<span style="color:#f92672">.</span>reduce_scatter_tensor(p<span style="color:#f92672">.</span>grad[offset:offset<span style="color:#f92672">+</span>chunk_size], grad, dist<span style="color:#f92672">.</span>ReduceOp<span style="color:#f92672">.</span>SUM, async_op<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>                self<span style="color:#f92672">.</span>handles<span style="color:#f92672">.</span>append(handle)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@contextmanager</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">no_sync</span>(self):
+</span></span><span style="display:flex;"><span>        before <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_should_all_reduce
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>_should_all_reduce <span style="color:#f92672">=</span> <span style="color:#66d9ef">False</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">yield</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">finally</span>:
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>_should_all_reduce <span style="color:#f92672">=</span> before
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">forward</span>(self, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>module(<span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">finish_gradient_synchronization</span>(self) <span style="color:#f92672">-&gt;</span> float:
+</span></span><span style="display:flex;"><span>        torch<span style="color:#f92672">.</span>cuda<span style="color:#f92672">.</span>synchronize()
+</span></span><span style="display:flex;"><span>        t0 <span style="color:#f92672">=</span> time<span style="color:#f92672">.</span>monotonic()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> h <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>handles:
+</span></span><span style="display:flex;"><span>            h<span style="color:#f92672">.</span>wait()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>handles<span style="color:#f92672">.</span>clear()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        torch<span style="color:#f92672">.</span>cuda<span style="color:#f92672">.</span>synchronize()
+</span></span><span style="display:flex;"><span>        time_comm <span style="color:#f92672">=</span> time<span style="color:#f92672">.</span>monotonic() <span style="color:#f92672">-</span> t0
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> time_comm
+</span></span></code></pre></div></details>
+<p>This implementation is not fully correct, since it uses slightly more memory for local buffers, and for larger models I&rsquo;ve often gotten OOM, so use it for reference only.</p>
+<h5 id="pros-1">Pros:<a hidden class="anchor" aria-hidden="true" href="#pros-1">#</a></h5>
+<ul>
+<li>Good idea, simple to understand</li>
+<li>Low overhead when done right</li>
+</ul>
+<h5 id="cons-1">Cons:<a hidden class="anchor" aria-hidden="true" href="#cons-1">#</a></h5>
+<ul>
+<li>Awful implementation process</li>
+</ul>
+<p>Pro-tip and a reminder: you can crank up gradient accumulation when dealing with those communication constrained problems, and most of the slowdown goes away (i.e. you can train with gradient accumulation=8 (i haven&rsquo;t tried 16, it might work too) and higher lr, and training doesn&rsquo;t diverge). So you sync gradients only every grad accum steps.</p>
+<p>Pro tip: you can crank up gradient accumulation for communication-constrained setups, and most of the slowdown goes away (e.g., try gradient_accumulation=8 or 16 and a higher LR). You sync gradients only every accumulation step.</p>
+<h4 id="zero-3-aka-fsdp">ZeRO-3 aka FSDP<a hidden class="anchor" aria-hidden="true" href="#zero-3-aka-fsdp">#</a></h4>
+<p>At this stage, we can actually shard the model parameters themselves, not just the optimizer states — but this comes at a cost. We would need to all‑gather each model layer during the forward pass and reduce‑scatter gradients during the backward pass. Things can get messy quickly, especially if you aim to overlap communication and computation and prefetch next layer while processing the current layer.</p>
+<figure>
+    <img loading="lazy" src="/posts/introduction-to-parallelism/fsdp.svg"/> 
+</figure>
+
+<p>At every layer:</p>
+<ol>
+<li>Construct full (unsharded) parameters by calling all-gather</li>
+<li>Perform forward pass and store activations</li>
+<li>Offload layer weights and go to the next layer</li>
+</ol>
+<hr>
+<p>During backward:</p>
+<ol>
+<li>Load stored activations</li>
+<li>Run all-gather model weights again if used by gradient function</li>
+<li>Obtain full gradient for that layer</li>
+<li>Shard gradient and reduce with other ranks via reduce-scatter</li>
+<li>Offload full gradient and model weights (if applicable)</li>
+</ol>
+<p>As you can see, we need to store activations for every layer (unless we do something like activation checkpointing, in which case we would compute activations in the backward pass &ldquo;on-demand&rdquo;) and do a second all-gather for the backward pass. Some operations can be overlapped and it&rsquo;s trivial to implement a pre-fetching of next layer while processing the current one with extra used memory cost. This is a bit similar to what we&rsquo;ve been doing for async DDP but it is also applicable to the forward pass now.</p>
+<p>I have no skill to implement FSDP, so no code, you could just use</p>
+<pre tabindex="0"><code>from torch.distributed.fsdp import fully_shard, MixedPrecisionPolicy, FSDPModule
+fsdp_kwargs = {
+    &#34;mp_policy&#34;: MixedPrecisionPolicy(
+        param_dtype=torch.bfloat16,
+        reduce_dtype=torch.float32,
+    )
+}
+for layer in model.blocks:
+    fully_shard(layer, **fsdp_kwargs)
+fully_shard(model, **fsdp_kwargs)
+</code></pre><p>on your model.</p>
+<h5 id="pros-2">Pros:<a hidden class="anchor" aria-hidden="true" href="#pros-2">#</a></h5>
+<ul>
+<li>Maximum memory savings; already fully supported in torch (even composable with torchao FP8)</li>
+</ul>
+<h5 id="cons-2">Cons:<a hidden class="anchor" aria-hidden="true" href="#cons-2">#</a></h5>
+<ul>
+<li>Highest overhead</li>
+<li>Can&rsquo;t be mitigated with gradient accumulation</li>
+</ul>
+<p>Since I have slow PCIe for my communication, this dropped my MFU from 40% to 6% with default settings.</p>
+<h3 id="tensor-parallel">Tensor Parallel<a hidden class="anchor" aria-hidden="true" href="#tensor-parallel">#</a></h3>
+<p>We know from linear algebra that we could multiply matrices by blocks.</p>
+<figure>
+    <img loading="lazy" src="/posts/introduction-to-parallelism/tp_linear_algebra.svg"/> 
+</figure>
+
+<p>In our case, if we shard first matrix by rows, and second by columns, output remains sharded on each rank (you could imagine rank 1 covers second row and results in a row which remains sharded on a second row)</p>
+<p>So, when you should use Tensor Parallel?</p>
+<ul>
+<li>When your batch sice becomes excessively large due to large DP group, so it&rsquo;s a way to regulate batch size (and since some optimizers starts to lose their strength at very large batch sizes)</li>
+<li>When you cannot run with FSDP with even batch=1 (model is too large). TP is a way to shard activations and hence reduce memory footprint even more.</li>
+</ul>
+<p>Since transfering activations across GPUs might be very costly, TP is usually applied inside a single node. It also only makes sense to shard either long sequences (output of RMSNorm) or proper matrices.</p>
+<p>It also best to shard row-wise first matrix (row-major) and column-wise second matrix, so that when you multiply them together you get correct sharded output on this rank, without the need of doing all-gather and all-reduce, but instead you will do all-gather at the beginning of a layer and reduce-scatter at the end.</p>
+<p>It also doesn&rsquo;t make much sense to apply TP on non powers of 2. Although possible to pad, overhead and complexity just becomes too high.</p>
+<p>Since 2.6 torch natively supports tensor parallel which works pretty well for basic cases.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> torch.distributed.tensor.parallel <span style="color:#f92672">import</span> ColwiseParallel, RowwiseParallel, parallelize_module
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>layer_tp_plan <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># by default ColwiseParallel input layouts is replicated</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># and RowwiseParallel output layouts is replicated</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;feed_foward.w1&#34;</span>: ColwiseParallel(),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;feed_forward.w2&#34;</span>: RowwiseParallel(),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;feed_forward.w3&#34;</span>: ColwiseParallel(),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> layer_id, transformer_block <span style="color:#f92672">in</span> enumerate(model<span style="color:#f92672">.</span>layers):
+</span></span><span style="display:flex;"><span>    parallelize_module(
+</span></span><span style="display:flex;"><span>        module<span style="color:#f92672">=</span>transformer_block,
+</span></span><span style="display:flex;"><span>        device_mesh<span style="color:#f92672">=</span>tp_mesh,
+</span></span><span style="display:flex;"><span>        parallelize_plan<span style="color:#f92672">=</span>layer_tp_plan,
+</span></span><span style="display:flex;"><span>    )
+</span></span></code></pre></div><p>It will handle all-gather and all-reduce before and after the TP plan. It won&rsquo;t handle async TP or more handy FP8 amax sharing, so you will still need to go in-depth if you want maximum efficiency.</p>
+<p>By calling <code>parallelize_module</code> it will monkey-patch <code>Tensor</code> to <code>DTensor</code> and add communication hooks.</p>
+<p>Tensor Parallel by itself has some disadvantages:
+Obviously it&rsquo;s almost impossible to have tp group size not be a power of 2. I could imagine splitting a matrix by 3, but then re-combining that with the next matrix would feel almost impossible and probably compute inefficient. When you split your matrix, you assume that your existing kernel would work similarly, but chances are it requires different optimal tile size and your autotune might miss it (in simple terms, smaller matrices would benefit from smaller tile sizes)</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/tags/ddp/">Ddp</a></li>
+      <li><a href="http://localhost:1313/tags/data-parallelism/">Data Parallelism</a></li>
+      <li><a href="http://localhost:1313/tags/fsdp/">Fsdp</a></li>
+      <li><a href="http://localhost:1313/tags/tensor-parallel/">Tensor Parallel</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="next" href="http://localhost:1313/posts/tokenizer-superbpe/">
+    <span class="title">Next »</span>
+    <br>
+    <span>Tokenization from first principles</span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:1313/">George Grigorev Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

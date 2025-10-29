@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Data Parallelism on George Grigorev Blog</title>
+    <link>http://localhost:1313/tags/data-parallelism/</link>
+    <description>Recent content in Data Parallelism on George Grigorev Blog</description>
+    <generator>Hugo -- 0.149.1</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 07 Oct 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/data-parallelism/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Introduction to parallelism in PyTorch</title>
+      <link>http://localhost:1313/posts/introduction-to-parallelism/</link>
+      <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/introduction-to-parallelism/</guid>
+      <description>&lt;h3 id=&#34;why-parallelism&#34;&gt;Why Parallelism&lt;/h3&gt;
+&lt;p&gt;If you have a single GPU and it&amp;rsquo;s enough for your needs, you don&amp;rsquo;t need to bother. But for most serious workloads, that&amp;rsquo;s not the case. With care, you can often get near‑linear training speedups when using more accelerators. Parallelism is a fundamental topic in ML interviews and in any Research Engineer knowledge.&lt;/p&gt;
+&lt;p&gt;In this blog post I&amp;rsquo;ll cover the most commonly used methods for parallelism: DDP, FSDP, and TP. In the next post, I&amp;rsquo;ll show how to write kernels and use FP8 for maximum efficiency.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
