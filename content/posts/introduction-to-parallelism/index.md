@@ -427,29 +427,35 @@ To achieve ZeRO‑2, let's study our third communication primitive: **reduce‑s
 
 {{< figure src="/posts/introduction-to-parallelism/reduce_scatter.svg">}}
 
-We chunk local tensor and send it, then it is reduced on host.
+In this example, subtensor `[3, 4]` of rank 0 is summed elementwise with host tensor `[3, 4]` of rank 1 to achieve `[6, 8]` on rank 1
+
+Likewise, subtensor `[1, 2]` of rank 1 is summed with host tensor `[1, 2]` of rank 0 to achieve `[2, 4]` on rank 0
+
+We chunk local tensor and send it, then it is reduced on host. We could achieve gradient sharding by using reduce-scatter during backpropagation, but it's not that simple.
 
 Modification that is needed on top of DDP to implement ZeRO-2:
 
-With reduce‑scatter we can no longer create buckets of arbitrary sizes; we need to fully flatten our gradient tensors (basically have all parameters flattened), then pad and chunk them. Their length must always be `chunk_size * world_size`.
+With **reduce‑scatter** we can no longer create buckets of arbitrary sizes; we need to fully flatten our gradient tensors (basically have all parameters flattened), then pad and chunk them. Their length must always be `chunk_size * world_size`.
 
-Suppose we have some algorithm that does this for us. But for Muon we still need to re‑create the full gradient in `optimizer.step` for computing the Newton–Schulz iteration, as noted in the Moonshot paper:
+Suppose we have some algorithm that does this for us. But for Muon 2D parameters we still need to re‑create the full gradient in `optimizer.step` for computing the Newton–Schulz iteration, as noted in the Moonshot paper:
 
 {{< figure src="/posts/introduction-to-parallelism/distributed_muon.jpeg" >}}
 
-We do that with **all‑gather** – in my opinion the simplest communication collective to understand:
+We do that with another collective – **all‑gather**, the simplest communication collective to understand:
 
 {{< figure src="/posts/introduction-to-parallelism/all_gather.svg">}}
 
-It fills a full tensor by gathering from all ranks into an empty tensor of the full size.
+It fills a full tensor by gathering from all ranks into an empty tensor of the full size. So each rank now has full (or all-gathered) tensor.
 
 You can notice now that **All-reduce** consists of **reduce-scatter** followed by **all-gather** (or vice versa). Both **all-gather** and reduce-scater send $N$ elements, while **All-reduce** sends $2N$ elements.
 
-In case of ZeRO-2 gradient sharding it seems like we can just replace **all‑reduce** with **reduce‑scatter**, but in reality we need to rework how we treat gradients in the DDP class. We need to create flat buffers, populate them in backward hooks without copies, split into segments aligned with parameter lengths (we don't want a parameter split across segments), and instead of sending all‑reduce when a bucket is ready, send a segment with reduce‑scatter (with padding so it evenly splits across world_size) when it's ready, and populate “owned” gradients. 
+In case of ZeRO-2 gradient sharding it seems like we can just replace **all‑reduce** with **reduce‑scatter** (considering all those padding issues), but in reality we would need to rework how we treat gradients in the DDP class entirely. 
 
-Up to this point I hadn't used AI tools for my development process, but for ZeRO‑2 I gave up – so I'll jump straight to the code below. It actually took me a whole day to make it work. I could get a non‑overlapped version with some memory benefit, but it was slow. Many times when I added overlapping, I hit OOM. But it was helpful to understand **reduce‑scatter** in detail.
+Up to this point I hadn't used AI tools for my development process, but for ZeRO‑2 I gave up – so I'll jump straight to the code below. It actually took me few days to make it work. I could get a non‑overlapped version with some memory benefit, but it was slow. Many times when I added overlapping, I hit OOM. But it was helpful to understand **reduce‑scatter** in detail.
 
-From the distributed‑code standpoint, every line must be executed on each rank. It's simpler to implement ZeRO‑2 by sharding gradients by slices, so that every rank holds only a reduced version of gradient (local gradient). You should also remember that you cannot flatten gradients of 2D parameters and chunk, but instead you should slice by rows (since Muon requires full 2D shape of reconstructed gradient, compared to Adam which can work elementwise and doesn't care about particular shape of the gradient).
+Just to give an idea, since this becoming too technical: we need to create flat buffers, populate them in backward hooks without copies, split into segments aligned with parameter lengths (we don't want a parameter split across segments), and instead of sending **all‑reduce** when a bucket is ready, send a segment (not a bucket) using **reduce‑scatter** (with padding so it evenly splits across world_size) when it's ready, and populate “owned” gradients on completion. 
+
+From the distributed‑code standpoint, every line must be executed on each rank. It's simpler to implement ZeRO‑2 by sharding gradients by slices (segments), so that every rank holds only a reduced version of a gradient (local gradient). You should also remember that you cannot flatten gradients of 2D parameters and chunk, but instead you should slice by rows (since Muon requires full 2D shape of reconstructed gradient, compared to Adam which can work elementwise and doesn't care about particular shape of the gradient).
 
 In the end, for me a correct implementation requires storing both the model and optimizer(s) in a single class, storing parameter and grad shards as optimizer state elements (in a `state[p]`), and carefully preserving structural correctness with unusual world sizes (e.g., for a world size of 3 you'll want to pad grads, chunk them, and then restore the correct shape).
 
@@ -550,6 +556,8 @@ class DDP(nn.Module):
 
 This implementation is not fully correct, since it uses slightly more memory for local buffers, and for larger models I've often gotten OOM, so use it for reference only.
 
+Take a look at [Megatron DDP implementation](https://github.com/NVIDIA/Megatron-LM/blob/main/megatron/core/distributed/distributed_data_parallel.py) as well, that supports reduce-scatter of gradients.
+
 
 ##### Pros:
 - Good idea, simple to understand
@@ -557,32 +565,31 @@ This implementation is not fully correct, since it uses slightly more memory for
 ##### Cons:
 - Awful implementation process
 
-Pro-tip and a reminder: you can crank up gradient accumulation when dealing with those communication constrained problems, and most of the slowdown goes away (i.e. you can train with gradient accumulation=8 (i haven't tried 16, it might work too) and higher lr, and training doesn't diverge). So you sync gradients only every grad accum steps.
-
 Pro tip: you can crank up gradient accumulation for communication-constrained setups, and most of the slowdown goes away (e.g., try gradient_accumulation=8 or 16 and a higher LR). You sync gradients only every accumulation step.
 
 #### ZeRO-3 aka FSDP
 
-At this stage, we can actually shard the model parameters themselves, not just the optimizer states — but this comes at a cost. We would need to all‑gather each model layer during the forward pass and reduce‑scatter gradients during the backward pass. Things can get messy quickly, especially if you aim to overlap communication and computation and prefetch next layer while processing the current layer.
+At this stage, you actually shard the model parameters, not just the optimizer states or grads — but this comes at a cost which is hard to fully overlap. We **all‑gather** each model layer during the forward pass and **all‑gather** model weights + **reduce‑scatter** gradients during the backward pass. Things can get messy quickly, especially if you aim to overlap communication and computation and prefetch next layer while processing the current layer.
 
 {{< figure src="/posts/introduction-to-parallelism/fsdp.svg">}}
 
 At every layer:
-1. Construct full (unsharded) parameters by calling all-gather
-2. Perform forward pass and store activations
-3. Offload layer weights and go to the next layer
+1.	Construct full (unsharded) parameters via **all-gather**
+2.	Perform the forward pass and store activations
+3.	Offload layer weights and proceed to the next layer
 ---
-During backward:
-1. Load stored activations
-2. Run all-gather model weights again if used by gradient function
-3. Obtain full gradient for that layer
-4. Shard gradient and reduce with other ranks via reduce-scatter
-5. Offload full gradient and model weights (if applicable)
+During the backward pass:
+1.	Load stored activations
+2.	**All-gather** model weights again if required by the gradient function
+3.	Compute full gradients for that layer
+4.	Shard the gradients and aggregate across ranks using **reduce-scatter**
+5.	Offload full gradients and model weights (if applicable)
 
-As you can see, we need to store activations for every layer (unless we do something like activation checkpointing, in which case we would compute activations in the backward pass "on-demand") and do a second all-gather for the backward pass. Some operations can be overlapped and it's trivial to implement a pre-fetching of next layer while processing the current one with extra used memory cost. This is a bit similar to what we've been doing for async DDP but it is also applicable to the forward pass now.
+As you can see, activations must be stored for every layer (unless we do something like activation checkpointing, in which case activations are recomputed on demand during the backward pass). A second **all-gather** is typically needed in the backward pass.
 
+Some operations can be overlapped — for instance, it’s straightforward to prefetch the next layer’s weights while processing the current one, at the cost of additional memory. This approach is conceptually similar to what we do in async DDP, but it now extends to the forward pass as well.
 
-I have no skill to implement FSDP, so no code, you could just use
+I have no skill to implement FSDP properly, so no code, it's easier to just use torch FSDP2 reference implementation:
 ```
 from torch.distributed.fsdp import fully_shard, MixedPrecisionPolicy, FSDPModule
 fsdp_kwargs = {
@@ -596,35 +603,35 @@ for layer in model.blocks:
 fully_shard(model, **fsdp_kwargs)
 ```
 
-on your model.
-
 
 ##### Pros:
-- Maximum memory savings; already fully supported in torch (even composable with torchao FP8)
+- Maximum memory savings; already fully supported in torch (even composable with torchao's FP8)
 ##### Cons:
-- Highest overhead
+- Higher overhead
 - Can't be mitigated with gradient accumulation
 
 Since I have slow PCIe for my communication, this dropped my MFU from 40% to 6% with default settings.
 
 
-### Tensor Parallel
+### Tensor Parallelism
 
 We know from linear algebra that we could multiply matrices by blocks.
 
 {{< figure src="/posts/introduction-to-parallelism/tp_linear_algebra.svg" >}}
 
-In our case, if we shard first matrix by rows, and second by columns, output remains sharded on each rank (you could imagine rank 1 covers second row and results in a row which remains sharded on a second row)
+In our case, if we shard the first matrix by rows and the second by columns, the output remains sharded on each rank (e.g., rank 1 holds the second row and produces the corresponding shard of the second output row).
 
-So, when you should use Tensor Parallel?
-- When your batch sice becomes excessively large due to large DP group, so it's a way to regulate batch size (and since some optimizers starts to lose their strength at very large batch sizes)
-- When you cannot run with FSDP with even batch=1 (model is too large). TP is a way to shard activations and hence reduce memory footprint even more.
+So, when you should use Tensor Parallelism (TP)?
+- When your effective batch size becomes excessively large due to a big DP group, so it's a way to regulate per GPU batch size (some optimizers starts degrade at very large batch sizes, term called Critical Batch Size)
+- When the model is too large for FSDP even with batch = 1. TP is a way to shard activations and hence reduce memory footprint even more.
 
-Since transfering activations across GPUs might be very costly, TP is usually applied inside a single node. It also only makes sense to shard either long sequences (output of RMSNorm) or proper matrices.
+Because transferring activations across GPUs is costly, TP is usually kept within a single node. It mainly makes sense to shard large, regular tensors (linear/attention projection matrices) and, optionally, long sequences via "sequence parallel" (e.g., after RMSNorm).
 
-It also best to shard row-wise first matrix (row-major) and column-wise second matrix, so that when you multiply them together you get correct sharded output on this rank, without the need of doing all-gather and all-reduce, but instead you will do all-gather at the beginning of a layer and reduce-scatter at the end.
+It’s generally best to shard the first matrix row-wise (row major) and the second column-wise so the local matmul yields a correctly sharded output on each rank. With this layout you typically all-gather the needed inputs at the beginning of a layer and reduce-scatter / all-reduce at the end, rather than doing a full all-reduce mid-layer.
 
-It also doesn't make much sense to apply TP on non powers of 2. Although possible to pad, overhead and complexity just becomes too high.
+> Practical pattern for MLP: use Column-parallel for the expansion (D → 8/3D), keep the output sharded, then Row-parallel for the contraction (8/3D → D). <br><br> For attention: shard QKV projections column-wise (partitions heads/features), and shard the output projection row-wise.
+
+Non power of 2 TP sizes (like 3) are possible with padding, but the overhead and kernel inefficiencies usually outweigh the benefit. Prefer TP sizes that divide both hidden size and #heads (e.g., 2/4/8) for better utilization.
 
 Since 2.6 torch natively supports tensor parallel which works pretty well for basic cases.
 
@@ -634,9 +641,8 @@ from torch.distributed.tensor.parallel import ColwiseParallel, RowwiseParallel, 
 layer_tp_plan = {
     # by default ColwiseParallel input layouts is replicated
     # and RowwiseParallel output layouts is replicated
-    "feed_foward.w1": ColwiseParallel(),
-    "feed_forward.w2": RowwiseParallel(),
-    "feed_forward.w3": ColwiseParallel(),
+    "ffn.up": ColwiseParallel(),  # H -> 8/3H
+    "ffn.down": RowwiseParallel(),
 }
 
 for layer_id, transformer_block in enumerate(model.layers):
@@ -647,9 +653,20 @@ for layer_id, transformer_block in enumerate(model.layers):
     )
 ```
 
-It will handle all-gather and all-reduce before and after the TP plan. It won't handle async TP or more handy FP8 amax sharing, so you will still need to go in-depth if you want maximum efficiency.
-
 By calling `parallelize_module` it will monkey-patch `Tensor` to `DTensor` and add communication hooks.
 
-Tensor Parallel by itself has some disadvantages:
-Obviously it's almost impossible to have tp group size not be a power of 2. I could imagine splitting a matrix by 3, but then re-combining that with the next matrix would feel almost impossible and probably compute inefficient. When you split your matrix, you assume that your existing kernel would work similarly, but chances are it requires different optimal tile size and your autotune might miss it (in simple terms, smaller matrices would benefit from smaller tile sizes)
+It will handle necessary all-gathers / reduce-scatters and all-reduce before and after the TP plan. It won't handle async TP or more handy FP8 amax sharing, so you will still need to go in-depth if you want maximum efficiency.
+
+
+Caveats:
+- TP groups that don’t divide model dimensions cleanly add padding/fragmentation and hurt occupancy.
+- When you split your matrix, you assume that your existing kernel would work similarly, but chances are it requires different optimal tile size and your triton autotune might miss it (in simple terms, smaller matrices would benefit from smaller tile sizes)
+
+
+### Conclusion
+In this post I covered the most popular parallelism strategies for general use small to medium-sized LLMs. I omitted Expert Parallel, Context Parallel and Pipeline Parallel which might be useful in other scenarios. 
+
+Here are some practical considerations when you start to scale your model:
+1. Start with DDP (with torch.compile) as your baseline. Use async all-reduce + bucketing, increase grad accumulation to hide latency.
+2. If you’re memory-bound, try ZeRO-1. With limited compute sometimes it is already enough to get high enough MFU and fit your model. If model still doesn't fit, try activation checkpointing, then FSDP.
+3. When scaling further, add TP, or if you want higher MFU and/or you already have very large batch size -- use TP on smaller models to (3B+ params).

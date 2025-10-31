@@ -2,26 +2,25 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Posts on George Grigorev Blog</title>
-    <link>http://localhost:1313/posts/</link>
+    <link>https://ggrigorev.me/posts/</link>
     <description>Recent content in Posts on George Grigorev Blog</description>
-    <generator>Hugo -- 0.149.1</generator>
+    <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
     <lastBuildDate>Tue, 07 Oct 2025 00:00:00 +0000</lastBuildDate>
-    <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://ggrigorev.me/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Introduction to parallelism in PyTorch</title>
-      <link>http://localhost:1313/posts/introduction-to-parallelism/</link>
+      <link>https://ggrigorev.me/posts/introduction-to-parallelism/</link>
       <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/posts/introduction-to-parallelism/</guid>
-      <description>&lt;h3 id=&#34;why-parallelism&#34;&gt;Why Parallelism&lt;/h3&gt;
-&lt;p&gt;If you have a single GPU and it&amp;rsquo;s enough for your needs, you don&amp;rsquo;t need to bother. But for most serious workloads, that&amp;rsquo;s not the case. With care, you can often get near‑linear training speedups when using more accelerators. Parallelism is a fundamental topic in ML interviews and in any Research Engineer knowledge.&lt;/p&gt;
-&lt;p&gt;In this blog post I&amp;rsquo;ll cover the most commonly used methods for parallelism: DDP, FSDP, and TP. In the next post, I&amp;rsquo;ll show how to write kernels and use FP8 for maximum efficiency.&lt;/p&gt;</description>
+      <guid>https://ggrigorev.me/posts/introduction-to-parallelism/</guid>
+      <description>&lt;p&gt;Training large models inevitably requires a solid understanding of parallelism techniques. In this post, I&amp;rsquo;ll give a practical, in-depth overview of the most common approaches — DDP, FSDP, and TP — and how they&amp;rsquo;re actually used in real PyTorch training setups.&lt;/p&gt;
+&lt;p&gt;This article was inspired by the excellent “How to Scale Your Model” &lt;a href=&#34;https://jax-ml.github.io/scaling-book/index&#34;&gt;blog series&lt;/a&gt;. While that series is clear and insightful, I felt it was missing some hands-on perspective and real-world lessons from someone who has trained models in the wild.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Tokenization from first principles</title>
-      <link>http://localhost:1313/posts/tokenizer-superbpe/</link>
+      <link>https://ggrigorev.me/posts/tokenizer-superbpe/</link>
       <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/posts/tokenizer-superbpe/</guid>
+      <guid>https://ggrigorev.me/posts/tokenizer-superbpe/</guid>
       <description>Byte-level BPE from first principles: what matters for speed and quality, how to implement it cleanly, and why a SuperBPE variant can lift sample efficiency.</description>
     </item>
   </channel>

@@ -2,66 +2,66 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Tags on George Grigorev Blog</title>
-    <link>http://localhost:1313/tags/</link>
+    <link>https://ggrigorev.me/tags/</link>
     <description>Recent content in Tags on George Grigorev Blog</description>
-    <generator>Hugo -- 0.149.1</generator>
+    <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
     <lastBuildDate>Tue, 07 Oct 2025 00:00:00 +0000</lastBuildDate>
-    <atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://ggrigorev.me/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Bpe</title>
-      <link>http://localhost:1313/tags/bpe/</link>
+      <link>https://ggrigorev.me/tags/bpe/</link>
       <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/bpe/</guid>
+      <guid>https://ggrigorev.me/tags/bpe/</guid>
       <description></description>
     </item>
     <item>
       <title>Data Parallelism</title>
-      <link>http://localhost:1313/tags/data-parallelism/</link>
+      <link>https://ggrigorev.me/tags/data-parallelism/</link>
       <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/data-parallelism/</guid>
+      <guid>https://ggrigorev.me/tags/data-parallelism/</guid>
       <description></description>
     </item>
     <item>
       <title>Ddp</title>
-      <link>http://localhost:1313/tags/ddp/</link>
+      <link>https://ggrigorev.me/tags/ddp/</link>
       <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/ddp/</guid>
+      <guid>https://ggrigorev.me/tags/ddp/</guid>
       <description></description>
     </item>
     <item>
       <title>Fsdp</title>
-      <link>http://localhost:1313/tags/fsdp/</link>
+      <link>https://ggrigorev.me/tags/fsdp/</link>
       <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/fsdp/</guid>
+      <guid>https://ggrigorev.me/tags/fsdp/</guid>
       <description></description>
     </item>
     <item>
       <title>Llm</title>
-      <link>http://localhost:1313/tags/llm/</link>
+      <link>https://ggrigorev.me/tags/llm/</link>
       <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/llm/</guid>
+      <guid>https://ggrigorev.me/tags/llm/</guid>
       <description></description>
     </item>
     <item>
       <title>Superbpe</title>
-      <link>http://localhost:1313/tags/superbpe/</link>
+      <link>https://ggrigorev.me/tags/superbpe/</link>
       <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/superbpe/</guid>
+      <guid>https://ggrigorev.me/tags/superbpe/</guid>
       <description></description>
     </item>
     <item>
       <title>Tensor Parallel</title>
-      <link>http://localhost:1313/tags/tensor-parallel/</link>
+      <link>https://ggrigorev.me/tags/tensor-parallel/</link>
       <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/tensor-parallel/</guid>
+      <guid>https://ggrigorev.me/tags/tensor-parallel/</guid>
       <description></description>
     </item>
     <item>
       <title>Tokenization</title>
-      <link>http://localhost:1313/tags/tokenization/</link>
+      <link>https://ggrigorev.me/tags/tokenization/</link>
       <pubDate>Tue, 07 Oct 2025 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/tokenization/</guid>
+      <guid>https://ggrigorev.me/tags/tokenization/</guid>
       <description></description>
     </item>
   </channel>
