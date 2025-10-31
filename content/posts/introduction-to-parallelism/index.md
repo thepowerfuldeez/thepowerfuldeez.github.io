@@ -1,6 +1,6 @@
 +++
 title = 'Introduction to parallelism in PyTorch'
-date = '2025-10-07T00:00:00Z'
+date = '2025-10-31T22:00:00Z'
 draft = false
 tags = ['ddp', 'data parallelism', 'fsdp', 'tensor parallel']
 summary = ''
